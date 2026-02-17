@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Chaos Office</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏢</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=IBM+Plex+Mono:wght@300;400;500&family=Nunito:wght@400;600;700&family=VT323&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      /* Base Palette */
+      --warm-sand: #EFD0AE;
+      --sunflower: #F6D937;
+      --peach-orange: #F8A153;
+      --coral-red: #EF6361;
+      --dusty-rose: #C7555E;
+      --dark-wine: #71323C;
+      --mauve: #975E5E;
+      --slate-blue: #808FAA;
+      --chalk: #C4BBB8;
+      --seafoam: #74A8A2;
+      --forest-green: #46A45F;
+      --sage: #88AF92;
+
+      /* UI Chrome Palette */
+      --espresso: #2C1F1A;
+      --dark-roast: #3D2B22;
+      --walnut: #5C3D2E;
+      --amber: #E8A44A;
+      --terracotta: #E87050;
+      --mint-green: #5EC47A;
+      --clear-blue: #5AADE8;
+      --punch: #FF6B6B;
+      --cream: #F0E8D0;
+      --warm-grey: #BEB0A0;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--espresso);
+      color: var(--cream);
+      font-family: 'Nunito', sans-serif;
+    }
+
+    #app {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* TOP BAR */
+    #top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 48px;
+      min-height: 48px;
+      background: var(--espresso);
+      border-bottom: 2px solid var(--walnut);
+      padding: 0 16px;
+      z-index: 100;
+    }
+
+    #top-bar .title {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 12px;
+      color: var(--amber);
+      text-shadow: 0 0 8px rgba(232,164,74,0.4);
+    }
+
+    #top-bar .clock {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 13px;
+      color: var(--warm-grey);
+    }
+
+    #top-bar .chaos-meter {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    #top-bar .chaos-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      color: var(--warm-grey);
+      text-transform: uppercase;
+    }
+
+    #chaos-dots {
+      display: flex;
+      gap: 4px;
+    }
+
+    .chaos-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--walnut);
+      border: 1px solid var(--warm-grey);
+      transition: background 0.3s;
+    }
+    .chaos-dot.active { background: var(--coral-red); }
+    .chaos-dot.active.high { background: var(--punch); box-shadow: 0 0 6px var(--punch); }
+
+    #help-btn {
+      background: none;
+      border: 1px solid var(--walnut);
+      color: var(--warm-grey);
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-family: 'Nunito', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      transition: all 0.2s;
+    }
+    #help-btn:hover { border-color: var(--amber); color: var(--amber); }
+
+    /* MAIN CONTENT */
+    #main-content {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* STATS PANEL */
+    #stats-panel {
+      width: 200px;
+      min-width: 200px;
+      background: var(--dark-roast);
+      border-right: 2px solid var(--walnut);
+      overflow-y: auto;
+      padding: 12px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .panel-section {
+      background: rgba(0,0,0,0.2);
+      border: 1px solid var(--walnut);
+      border-radius: 4px;
+      padding: 8px;
+    }
+
+    .panel-section-title {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 9px;
+      color: var(--amber);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+
+    .stat-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+
+    .stat-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px;
+      color: var(--warm-grey);
+    }
+
+    .stat-value {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--cream);
+      min-width: 4ch;
+      text-align: right;
+    }
+
+    .stat-bar-container {
+      height: 6px;
+      background: var(--walnut);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 6px;
+    }
+
+    .stat-bar {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.4s ease-out, background-color 0.4s;
+    }
+
+    .stat-bar.productivity { background: var(--mint-green); }
+    .stat-bar.chaos { background: var(--coral-red); }
+    .stat-bar.morale { background: var(--amber); }
+
+    /* Agent type list */
+    .agent-type-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 3px;
+    }
+
+    .agent-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .agent-type-name {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 9px;
+      color: var(--warm-grey);
+      flex: 1;
+    }
+
+    .agent-type-count {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px;
+      color: var(--cream);
+      min-width: 2ch;
+      text-align: right;
+    }
+
+    /* CANVAS CONTAINER */
+    #canvas-container {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background: #88AF92;
+      min-width: 0;
+    }
+
+    #canvas-container canvas {
+      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100% !important;
+      height: 100% !important;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+
+    /* Placement cursor overlay */
+    #placement-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      cursor: crosshair;
+      display: none;
+      z-index: 10;
+    }
+
+    #placement-overlay.active { display: block; }
+
+    #placement-hint {
+      position: absolute;
+      bottom: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(44, 31, 26, 0.9);
+      border: 1px solid var(--amber);
+      color: var(--amber);
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-family: 'Nunito', sans-serif;
+      font-size: 12px;
+      pointer-events: none;
+    }
+
+    /* EVENT LOG */
+    #event-log {
+      width: 250px;
+      min-width: 250px;
+      background: var(--dark-roast);
+      border-left: 2px solid var(--walnut);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #event-log-header {
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--walnut);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 9px;
+      color: var(--amber);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      flex-shrink: 0;
+    }
+
+    #event-log-entries {
+      flex: 1;
+      overflow-y: auto;
+      padding: 4px 0;
+    }
+
+    #event-log-entries::-webkit-scrollbar { width: 4px; }
+    #event-log-entries::-webkit-scrollbar-track { background: var(--dark-roast); }
+    #event-log-entries::-webkit-scrollbar-thumb { background: var(--walnut); border-radius: 2px; }
+
+    .event-entry {
+      padding: 5px 10px;
+      border-bottom: 1px solid rgba(92, 61, 46, 0.3);
+      animation: slideIn 0.2s ease-out;
+      transition: opacity 0.5s;
+    }
+
+    .event-entry.old { opacity: 0.4; }
+
+    @keyframes slideIn {
+      from { transform: translateY(-8px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .event-timestamp {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 9px;
+      color: var(--warm-grey);
+      margin-bottom: 1px;
+    }
+
+    .event-text {
+      font-family: 'VT323', monospace;
+      font-size: 14px;
+      color: var(--cream);
+      line-height: 1.3;
+    }
+
+    .event-entry.chaos .event-text { color: var(--punch); }
+    .event-entry.good .event-text { color: var(--mint-green); }
+    .event-entry.info .event-text { color: var(--clear-blue); }
+    .event-entry.warning .event-text { color: var(--amber); }
+
+    /* ACTION BAR */
+    #action-bar {
+      height: 56px;
+      min-height: 56px;
+      background: var(--espresso);
+      border-top: 2px solid var(--walnut);
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      gap: 8px;
+      overflow-x: auto;
+      z-index: 100;
+    }
+
+    .action-group {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .action-divider {
+      width: 1px;
+      height: 32px;
+      background: var(--walnut);
+      flex-shrink: 0;
+    }
+
+    .action-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 8px;
+      color: var(--warm-grey);
+      text-transform: uppercase;
+      writing-mode: vertical-lr;
+      transform: rotate(180deg);
+    }
+
+    .btn {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-family: 'Nunito', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+      transition: all 0.15s;
+      user-select: none;
+    }
+
+    .btn:active { transform: scale(0.96); }
+
+    .btn-primary {
+      background: var(--amber);
+      color: var(--espresso);
+    }
+    .btn-primary:hover { background: var(--terracotta); }
+
+    .btn-secondary {
+      background: var(--walnut);
+      color: var(--cream);
+    }
+    .btn-secondary:hover { background: #7a5240; }
+
+    .btn-chaos {
+      background: var(--punch);
+      color: white;
+      animation: pulseBtn 2s infinite;
+    }
+    @keyframes pulseBtn {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(255, 107, 107, 0.4); }
+      50% { box-shadow: 0 0 0 6px rgba(255, 107, 107, 0); }
+    }
+    .btn-chaos:hover { background: var(--coral-red); }
+
+    .btn-toggle {
+      background: var(--walnut);
+      color: var(--warm-grey);
+    }
+    .btn-toggle.active {
+      background: var(--sunflower);
+      color: var(--espresso);
+    }
+
+    .btn-icon { font-size: 14px; }
+
+    /* TOAST NOTIFICATIONS */
+    #toast-container {
+      position: fixed;
+      bottom: 72px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 1000;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: var(--dark-roast);
+      border: 1px solid var(--amber);
+      color: var(--cream);
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-family: 'Nunito', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      text-align: center;
+      animation: toastIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+    }
+
+    @keyframes toastIn {
+      from { transform: scale(0.8) translateY(10px); opacity: 0; }
+      to { transform: scale(1) translateY(0); opacity: 1; }
+    }
+
+    .toast.fadeOut {
+      animation: toastOut 0.3s ease-in forwards;
+    }
+
+    @keyframes toastOut {
+      to { transform: scale(0.8) translateY(10px); opacity: 0; }
+    }
+
+    /* WEEKEND COUNTDOWN */
+    #weekend-countdown {
+      position: fixed;
+      bottom: 72px;
+      right: 16px;
+      background: var(--dark-roast);
+      border: 1px solid var(--sunflower);
+      color: var(--sunflower);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      z-index: 999;
+      display: none;
+    }
+
+    #weekend-countdown.visible { display: block; }
+
+    #weekend-countdown .countdown-label {
+      font-size: 9px;
+      color: var(--warm-grey);
+      margin-bottom: 2px;
+    }
+
+    #weekend-countdown .countdown-time {
+      font-size: 16px;
+      font-weight: 500;
+      letter-spacing: 2px;
+    }
+
+    /* CHAOS OVERLAY */
+    #chaos-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 0, 0, 0);
+      pointer-events: none;
+      z-index: 500;
+      transition: background 0.3s;
+    }
+
+    /* PALETTE SHIFT OVERLAY (Observer) */
+    #sepia-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(212, 178, 140, 0);
+      pointer-events: none;
+      z-index: 499;
+      mix-blend-mode: multiply;
+      transition: background 2s;
+    }
+
+    #sepia-overlay.active {
+      background: rgba(212, 178, 140, 0.25);
+    }
+
+    /* MOBILE LAYOUT */
+    @media (max-width: 768px) {
+      #stats-panel {
+        display: none;
+      }
+
+      #event-log {
+        display: none;
+      }
+
+      #top-bar .title {
+        font-size: 8px;
+      }
+
+      #action-bar {
+        height: auto;
+        min-height: 56px;
+        padding: 6px;
+        flex-wrap: wrap;
+      }
+
+      .action-label { display: none; }
+      .action-divider { display: none; }
+
+      .btn {
+        padding: 8px;
+        font-size: 0;
+      }
+
+      .btn-icon {
+        font-size: 20px;
+      }
+
+      #mobile-stats {
+        display: flex;
+      }
+    }
+
+    @media (min-width: 769px) {
+      #mobile-stats { display: none !important; }
+    }
+
+    #mobile-stats {
+      display: none;
+      align-items: center;
+      gap: 12px;
+      padding: 6px 12px;
+      background: var(--dark-roast);
+      border-top: 1px solid var(--walnut);
+      overflow-x: auto;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px;
+      color: var(--warm-grey);
+    }
+
+    .mobile-stat {
+      display: flex;
+      gap: 4px;
+      white-space: nowrap;
+    }
+
+    .mobile-stat-value {
+      color: var(--cream);
+      font-weight: 500;
+    }
+
+    /* HELP MODAL */
+    #help-modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #help-modal.open { display: flex; }
+
+    .modal-content {
+      background: var(--dark-roast);
+      border: 2px solid var(--walnut);
+      border-radius: 8px;
+      padding: 24px;
+      max-width: 500px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .modal-title {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 12px;
+      color: var(--amber);
+      margin-bottom: 16px;
+    }
+
+    .modal-section {
+      margin-bottom: 16px;
+    }
+
+    .modal-section h3 {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      color: var(--seafoam);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .modal-section p, .modal-section li {
+      font-size: 12px;
+      color: var(--warm-grey);
+      line-height: 1.6;
+      margin-bottom: 4px;
+    }
+
+    .modal-section ul { padding-left: 16px; }
+
+    #close-help {
+      display: block;
+      margin-top: 16px;
+      background: var(--amber);
+      color: var(--espresso);
+      border: none;
+      padding: 8px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: 'Nunito', sans-serif;
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    /* PERFORMANCE INDICATOR */
+    #perf-display {
+      position: fixed;
+      top: 56px;
+      right: 258px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 9px;
+      color: rgba(190, 176, 160, 0.5);
+      pointer-events: none;
+      z-index: 50;
+    }
+
+    @media (max-width: 768px) {
+      #perf-display { right: 4px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- TOP BAR -->
+    <header id="top-bar">
+      <div class="title">🏢 CHAOS OFFICE</div>
+      <div class="clock" id="clock">Tue 14:32</div>
+      <div class="chaos-meter">
+        <span class="chaos-label">Chaos</span>
+        <div id="chaos-dots">
+          <div class="chaos-dot" id="chaos-dot-1"></div>
+          <div class="chaos-dot" id="chaos-dot-2"></div>
+          <div class="chaos-dot" id="chaos-dot-3"></div>
+          <div class="chaos-dot" id="chaos-dot-4"></div>
+          <div class="chaos-dot" id="chaos-dot-5"></div>
+        </div>
+        <button id="help-btn" aria-label="Help">?</button>
+      </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <div id="main-content">
+      <!-- STATS PANEL -->
+      <aside id="stats-panel" aria-label="Statistics">
+        <div class="panel-section">
+          <div class="panel-section-title">Office Status</div>
+          <div class="stat-row">
+            <span class="stat-label">Agents</span>
+            <span class="stat-value" id="stat-agents">40</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Productivity</span>
+            <span class="stat-value" id="stat-productivity">72%</span>
+          </div>
+          <div class="stat-bar-container">
+            <div class="stat-bar productivity" id="bar-productivity" style="width:72%"></div>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Morale</span>
+            <span class="stat-value" id="stat-morale">65%</span>
+          </div>
+          <div class="stat-bar-container">
+            <div class="stat-bar morale" id="bar-morale" style="width:65%"></div>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Chaos Index</span>
+            <span class="stat-value" id="stat-chaos">0.24</span>
+          </div>
+          <div class="stat-bar-container">
+            <div class="stat-bar chaos" id="bar-chaos" style="width:24%"></div>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <div class="panel-section-title">Staff Roster</div>
+          <div class="agent-type-row">
+            <div class="agent-dot" style="background:#4A90E2"></div>
+            <span class="agent-type-name">Grinders</span>
+            <span class="agent-type-count" id="count-grinder">8</span>
+          </div>
+          <div class="agent-type-row">
+            <div class="agent-dot" style="background:#E8A838"></div>
+            <span class="agent-type-name">Wanderers</span>
+            <span class="agent-type-count" id="count-wanderer">10</span>
+          </div>
+          <div class="agent-type-row">
+            <div class="agent-dot" style="background:#E24A6A"></div>
+            <span class="agent-type-name">Gossips</span>
+            <span class="agent-type-count" id="count-gossip">8</span>
+          </div>
+          <div class="agent-type-row">
+            <div class="agent-dot" style="background:#8B4AE2"></div>
+            <span class="agent-type-name">Managers</span>
+            <span class="agent-type-count" id="count-manager">2</span>
+          </div>
+          <div class="agent-type-row">
+            <div class="agent-dot" style="background:#4AE28B"></div>
+            <span class="agent-type-name">Interns</span>
+            <span class="agent-type-count" id="count-intern">8</span>
+          </div>
+          <div class="agent-type-row">
+            <div class="agent-dot" style="background:#FF3B3B"></div>
+            <span class="agent-type-name">Chaos Agents</span>
+            <span class="agent-type-count" id="count-chaos">4</span>
+          </div>
+          <div class="agent-type-row" id="observer-row" style="display:none">
+            <div class="agent-dot" style="background:#2A2A2A;border:1px solid #666"></div>
+            <span class="agent-type-name">Observer</span>
+            <span class="agent-type-count" id="count-observer">0</span>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <div class="panel-section-title">Spawn Agent</div>
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <button class="btn btn-secondary" data-spawn="GRINDER" aria-label="Spawn Grinder" style="font-size:10px;padding:5px 8px">+ Grinder</button>
+            <button class="btn btn-secondary" data-spawn="WANDERER" aria-label="Spawn Wanderer" style="font-size:10px;padding:5px 8px">+ Wanderer</button>
+            <button class="btn btn-secondary" data-spawn="GOSSIP" aria-label="Spawn Gossip" style="font-size:10px;padding:5px 8px">+ Gossip</button>
+            <button class="btn btn-secondary" data-spawn="MANAGER" aria-label="Spawn Manager" style="font-size:10px;padding:5px 8px">+ Manager</button>
+            <button class="btn btn-secondary" data-spawn="INTERN" aria-label="Spawn Intern" style="font-size:10px;padding:5px 8px">+ Intern</button>
+            <button class="btn btn-chaos" data-spawn="CHAOS_AGENT" aria-label="Spawn Chaos Agent" style="font-size:10px;padding:5px 8px">+ Chaos Agent</button>
+          </div>
+        </div>
+      </aside>
+
+      <!-- CANVAS CONTAINER -->
+      <div id="canvas-container">
+        <div id="placement-overlay" aria-label="Click to place item">
+          <div id="placement-hint">Click to place</div>
+        </div>
+      </div>
+
+      <!-- EVENT LOG -->
+      <aside id="event-log" aria-label="Event Log">
+        <div id="event-log-header">📋 Event Log</div>
+        <div id="event-log-entries" aria-live="polite" aria-atomic="false"></div>
+      </aside>
+    </div>
+
+    <!-- MOBILE STATS STRIP -->
+    <div id="mobile-stats">
+      <div class="mobile-stat">
+        <span>Staff:</span><span class="mobile-stat-value" id="m-stat-agents">40</span>
+      </div>
+      <div class="mobile-stat">
+        <span>Prod:</span><span class="mobile-stat-value" id="m-stat-productivity">72%</span>
+      </div>
+      <div class="mobile-stat">
+        <span>Chaos:</span><span class="mobile-stat-value" id="m-stat-chaos">24%</span>
+      </div>
+    </div>
+
+    <!-- ACTION BAR -->
+    <footer id="action-bar">
+      <span class="action-label">Disturbances</span>
+      <div class="action-group">
+        <button class="btn btn-primary" id="btn-pizza" aria-label="Drop Pizza">
+          <span class="btn-icon">🍕</span><span>Pizza</span>
+        </button>
+        <button class="btn btn-chaos" id="btn-alarm" aria-label="Fire Alarm">
+          <span class="btn-icon">🔥</span><span>Fire Alarm</span>
+        </button>
+        <button class="btn btn-secondary" id="btn-cat" aria-label="Drop Cat">
+          <span class="btn-icon">🐱</span><span>Drop Cat</span>
+        </button>
+        <button class="btn btn-secondary" id="btn-meeting" aria-label="Place Meeting Room">
+          <span class="btn-icon">📊</span><span>Meeting</span>
+        </button>
+      </div>
+      <div class="action-divider"></div>
+      <div class="action-group">
+        <button class="btn btn-toggle" id="btn-friday" aria-label="Toggle Friday Afternoon">
+          <span class="btn-icon">🎉</span><span>Friday</span>
+        </button>
+      </div>
+    </footer>
+  </div>
+
+  <!-- OVERLAYS -->
+  <div id="chaos-overlay"></div>
+  <div id="sepia-overlay"></div>
+
+  <!-- TOAST CONTAINER -->
+  <div id="toast-container" aria-live="assertive"></div>
+
+  <!-- WEEKEND COUNTDOWN -->
+  <div id="weekend-countdown" aria-live="polite">
+    <div class="countdown-label">Weekend in...</div>
+    <div class="countdown-time" id="countdown-time">00:00:00</div>
+  </div>
+
+  <!-- PERFORMANCE DISPLAY -->
+  <div id="perf-display" id="fps-display">60 FPS</div>
+
+  <!-- HELP MODAL -->
+  <div id="help-modal" role="dialog" aria-modal="true" aria-label="Help">
+    <div class="modal-content">
+      <div class="modal-title">📋 CHAOS OFFICE</div>
+      <div class="modal-section">
+        <h3>What is this?</h3>
+        <p>An emergent behaviour simulation of office life. Watch as simple rules create complex, comedic group dynamics.</p>
+      </div>
+      <div class="modal-section">
+        <h3>Character Types</h3>
+        <ul>
+          <li>🔵 <strong>Grinder</strong> — finds a desk, stays, boosts nearby productivity</li>
+          <li>🟡 <strong>Wanderer</strong> — random walks, coffee machine pilgrimages</li>
+          <li>🔴 <strong>Gossip</strong> — seeks groups, spreads colour-coded rumours</li>
+          <li>🟣 <strong>Manager</strong> — disperses clusters, gets confused after</li>
+          <li>🟢 <strong>Intern</strong> — copies nearest agent with 2-second delay</li>
+          <li>🔴 <strong>Chaos Agent</strong> — random modes, breaks things</li>
+          <li>⚫ <strong>Observer</strong> — unlock via secret easter egg...</li>
+        </ul>
+      </div>
+      <div class="modal-section">
+        <h3>Disturbances</h3>
+        <ul>
+          <li>🍕 <strong>Pizza</strong> — click to place; agents migrate toward it</li>
+          <li>🔥 <strong>Fire Alarm</strong> — stampede to exits</li>
+          <li>🐱 <strong>Cat</strong> — half cluster, half flee</li>
+          <li>📊 <strong>Meeting</strong> — Manager herds everyone in</li>
+          <li>🎉 <strong>Friday</strong> — everything slows, Wanderers multiply</li>
+        </ul>
+      </div>
+      <div class="modal-section">
+        <h3>Easter Eggs</h3>
+        <ul>
+          <li>👁 There are 4 hidden easter eggs. Can you find them?</li>
+        </ul>
+      </div>
+      <button id="close-help">Got it!</button>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

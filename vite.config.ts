@@ -1,0 +1,16 @@
+import { defineConfig } from 'vite';
+
+export default defineConfig({
+  base: './',
+  build: {
+    target: 'es2022',
+    outDir: 'dist',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          pixi: ['pixi.js'],
+        },
+      },
+    },
+  },
+});
