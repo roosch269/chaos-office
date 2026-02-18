@@ -26,6 +26,7 @@ import {
   POWER_NAP_DURATION_MIN, POWER_NAP_DURATION_MAX,
   LOUD_MUSIC_DURATION,
   PING_PONG_DURATION,
+  AGENT_RADIUS,
 } from './constants.js';
 import {
   Agent, updateAgent, WorldContext, ParticleOpts, randRange, steerToward, dist,
@@ -34,6 +35,7 @@ import { Quadtree, QuadPoint } from './quadtree.js';
 import { ParticleSystem } from './particles.js';
 import {
   createOfficeLayout, clampToWorld, randomEdgePosition, randomWorldPosition,
+  getCollidingDesks,
 } from './office.js';
 import { checkEasterEggs, EasterEggState } from './eastereggs.js';
 import { ChatSystem } from './chat.js';
@@ -425,6 +427,35 @@ export class World {
         if (agent.type === AgentType.WANDERER && agent.state === AgentState.WANDERING) {
           agent.state = AgentState.BUMP_RECOVERY;
           agent.stateTimer = 0.3;
+        }
+      }
+
+      // Desk collision — push agents out of desk bounding boxes
+      // Exception: skip desks claimed by this agent (grinders heading to their own desk)
+      const pushRadius = AGENT_RADIUS + 4;
+      const collidingDesks = getCollidingDesks(agent.x, agent.y, pushRadius, this.desks);
+      for (const desk of collidingDesks) {
+        if (desk.claimedBy === agent.id) continue; // let the owner pass through
+        const nearX = Math.max(desk.x, Math.min(agent.x, desk.x + desk.width));
+        const nearY = Math.max(desk.y, Math.min(agent.y, desk.y + desk.height));
+        const dx = agent.x - nearX;
+        const dy = agent.y - nearY;
+        const d = Math.sqrt(dx * dx + dy * dy);
+        if (d < pushRadius) {
+          if (d > 0.001) {
+            const push = pushRadius - d;
+            agent.x += (dx / d) * push;
+            agent.y += (dy / d) * push;
+            // Cancel velocity component directed into the desk
+            const dot = agent.vx * (dx / d) + agent.vy * (dy / d);
+            if (dot < 0) {
+              agent.vx -= dot * (dx / d);
+              agent.vy -= dot * (dy / d);
+            }
+          } else {
+            // Exactly on nearest point — nudge away horizontally
+            agent.x += pushRadius;
+          }
         }
       }
 

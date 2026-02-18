@@ -22,16 +22,16 @@
       --seafoam: #74A8A2;
       --forest-green: #46A45F;
       --sage: #88AF92;
-      --espresso: #2C1F1A;
-      --dark-roast: #3D2B22;
-      --walnut: #5C3D2E;
-      --amber: #E8A44A;
-      --terracotta: #E87050;
-      --mint-green: #5EC47A;
-      --clear-blue: #5AADE8;
-      --punch: #FF6B6B;
-      --cream: #F0E8D0;
-      --warm-grey: #BEB0A0;
+      --espresso: #1a1b2e;
+      --dark-roast: #222340;
+      --walnut: #353660;
+      --amber: #FFB84D;
+      --terracotta: #FF6B6B;
+      --mint-green: #4ADE80;
+      --clear-blue: #60A5FA;
+      --punch: #F43F5E;
+      --cream: #F8FAFC;
+      --warm-grey: #94A3B8;
       --floor-cream: #F5ECD7;
     }
 
@@ -58,11 +58,13 @@
       justify-content: space-between;
       height: 44px;
       min-height: 44px;
-      background: var(--espresso);
+      background: linear-gradient(135deg, var(--espresso) 0%, #1e2040 50%, var(--dark-roast) 100%);
       border-bottom: 2px solid var(--walnut);
       padding: 0 12px;
       z-index: 100;
       flex-shrink: 0;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(8px);
     }
 
     #top-bar .title {
@@ -137,10 +139,11 @@
     }
 
     .panel-section {
-      background: rgba(0,0,0,0.2);
+      background: rgba(255,255,255,0.05);
       border: 1px solid var(--walnut);
-      border-radius: 4px;
+      border-radius: 6px;
       padding: 8px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
     }
 
     .panel-section-title {
@@ -290,6 +293,7 @@
       padding: 4px 0;
       display: flex;
       flex-direction: column;
+      background: rgba(255,255,255,0.03);
     }
 
     #chat-feed::-webkit-scrollbar { width: 4px; }
@@ -298,7 +302,7 @@
 
     .chat-entry {
       padding: 4px 10px;
-      border-bottom: 1px solid rgba(92, 61, 46, 0.2);
+      border-bottom: 1px solid rgba(53, 54, 96, 0.4);
       animation: slideIn 0.2s ease-out;
       font-family: 'VT323', monospace;
       font-size: 14px;
@@ -326,6 +330,7 @@
       background: var(--dark-roast);
       border-top: 2px solid var(--walnut);
       flex-shrink: 0;
+      box-shadow: 0 -2px 12px rgba(0,0,0,0.3);
     }
 
     .mobile-chat-header {
@@ -387,8 +392,9 @@
       border-color: var(--amber);
       background: var(--walnut);
       transform: scale(1.08);
+      box-shadow: 0 0 14px rgba(255, 184, 77, 0.35), 0 2px 8px rgba(0,0,0,0.4);
     }
-    .icon-btn:active { transform: scale(0.9); }
+    .icon-btn:active { transform: scale(0.9); box-shadow: none; }
 
     .icon-btn--chaos {
       border-color: var(--punch);

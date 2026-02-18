@@ -499,7 +499,7 @@ function updateGrinder(agent: Agent, dt: number, world: WorldContext): void {
       if (d < DESK_CLAIM_RADIUS) {
         agent.state = AgentState.SEATED;
         agent.x = deskCX;
-        agent.y = deskCY + desk.height * 0.4;
+        agent.y = deskCY + desk.height * 0.6; // sit behind/below the desk, not on top
         agent.vx = 0; agent.vy = 0;
         agent.glowAlpha = 0.3;
       } else {
