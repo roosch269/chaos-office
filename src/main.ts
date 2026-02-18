@@ -21,7 +21,7 @@ async function main(): Promise<void> {
 
   await app.init({
     resizeTo: canvasContainer,
-    backgroundColor: 0x88AF92,
+    backgroundColor: 0xF5ECD7,
     resolution: Math.min(window.devicePixelRatio, 2),
     autoDensity: true,
     antialias: false,
@@ -79,6 +79,10 @@ async function main(): Promise<void> {
   
   // Listen to PixiJS resize events
   app.renderer.on('resize', handleResize);
+
+  // Delayed resize in case flex layout hasn't settled yet
+  setTimeout(handleResize, 100);
+  setTimeout(handleResize, 500);
 
   // ─── Placement state ──────────────────────────────────────
   let pendingDisturbance: 'PIZZA' | 'CAT' | 'MEETING' | null = null;
@@ -275,6 +279,7 @@ async function main(): Promise<void> {
 
   console.log('🏢 Chaos Office initialized.');
   console.log('👁 Easter eggs: 4 hidden. Good luck finding them all.');
+  console.log(`📊 Agents: ${world.agents.length}, Desks: ${world.desks.length}`);
 }
 
 main().catch(console.error);

@@ -226,14 +226,14 @@ export class Renderer {
     // Output tray
     g.rect(prX - 24, prY + 26, 48, 6).fill({ color: 0xBBCCDD });
     // Control panel
-    g.rect(prX + 10, prY + 5, 14, 14).fill({ color: 0x6677888 });
+    g.rect(prX + 10, prY + 5, 14, 14).fill({ color: 0x667788 });
     g.circle(prX + 15, prY + 10, 3).fill({ color: 0x44BB44 });
     g.circle(prX + 22, prY + 10, 3).fill({ color: 0xBB4444 });
     // Paper in feeder
     g.rect(prX - 16, prY - 8, 30, 4).fill({ color: 0xF0EDE0 });
     // Ventilation slots
-    g.rect(prX - 24, prY + 18, 6, 2).fill({ color: 0x6677888 });
-    g.rect(prX - 24, prY + 22, 6, 2).fill({ color: 0x6677888 });
+    g.rect(prX - 24, prY + 18, 6, 2).fill({ color: 0x667788 });
+    g.rect(prX - 24, prY + 22, 6, 2).fill({ color: 0x667788 });
 
     const prLabel = new Text({ text: 'PRINTER', style: this.labelStyle });
     prLabel.x = prX - 24;
