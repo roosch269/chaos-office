@@ -19,6 +19,8 @@ import {
   CAT_ATTRACT_RADIUS, CAT_AVOID_RADIUS,
   WORLD_WIDTH, WORLD_HEIGHT, AGENT_RADIUS, COLORS,
   PIZZA_ATTRACT_RADIUS,
+  AGENT_NAMES,
+  LOUD_MUSIC_AVOID_RADIUS, PING_PONG_RADIUS,
 } from './constants.js';
 import { Desk, CoffeeMachine, Exit, PizzaEntity, CatEntity, MeetingRoom } from './types.js';
 
@@ -31,6 +33,7 @@ export class Agent {
   id: number;
   type: AgentType;
   state: AgentState;
+  name: string;
 
   x: number;
   y: number;
@@ -101,6 +104,7 @@ export class Agent {
   constructor(type: AgentType, x: number, y: number) {
     this.id = _nextId++;
     this.type = type;
+    this.name = AGENT_NAMES[Math.floor(Math.random() * AGENT_NAMES.length)];
     this.x = x;
     this.y = y;
     this.vx = 0;
@@ -286,7 +290,10 @@ export interface WorldContext {
   meetingRoom: MeetingRoom | null;
   fridayMode: boolean;
   alarmActive: boolean;
+  coffeeBroken: boolean;
   globalSpeedMult: number;
+  musicSource: { x: number; y: number } | null;
+  pingPongZone: { x: number; y: number } | null;
   spawnParticle: (x: number, y: number, color: number, count?: number, opts?: ParticleOpts) => void;
   addLogEvent: (text: string, type: import('./types.js').EventType) => void;
   quadtreeQuery: (x: number, y: number, r: number) => import('./quadtree.js').QuadPoint[];
@@ -330,6 +337,47 @@ export function updateAgent(agent: Agent, dt: number, world: WorldContext): void
     agent.vx = sv.vx;
     agent.vy = sv.vy;
     return;
+  }
+
+  // New disturbance states
+  if (agent.state === AgentState.READING_PHONE) {
+    agent.stateTimer -= cappedDt;
+    agent.vx = 0; agent.vy = 0;
+    if (agent.stateTimer <= 0) agent.state = defaultStateForType(agent.type);
+    return;
+  }
+  if (agent.state === AgentState.POWER_NAP) {
+    agent.stateTimer -= cappedDt;
+    agent.vx = 0; agent.vy = 0;
+    // Zzz particles are spawned by world system
+    if (agent.stateTimer <= 0) agent.state = defaultStateForType(agent.type);
+    return;
+  }
+
+  // Loud music avoidance
+  if (world.musicSource) {
+    const ms = world.musicSource;
+    const d = dist(agent.x, agent.y, ms.x, ms.y);
+    if (d < LOUD_MUSIC_AVOID_RADIUS && agent.type !== AgentType.OBSERVER &&
+        agent.state !== AgentState.PANICKING && agent.state !== AgentState.ESCAPED) {
+      // flee from music
+      const sv = steerAway(agent.x, agent.y, ms.x, ms.y, BASE_SPEED * 0.9 * world.globalSpeedMult);
+      agent.vx += sv.vx * 0.3;
+      agent.vy += sv.vy * 0.3;
+    }
+  }
+
+  // Ping pong attractor (only wanderers and interns)
+  if (world.pingPongZone &&
+     (agent.type === AgentType.WANDERER || agent.type === AgentType.INTERN) &&
+      agent.state !== AgentState.PANICKING && agent.state !== AgentState.ESCAPED) {
+    const pz = world.pingPongZone;
+    const d = dist(agent.x, agent.y, pz.x, pz.y);
+    if (d < PING_PONG_RADIUS * 2) {
+      const sv = steerToward(agent.x, agent.y, pz.x, pz.y, BASE_SPEED * 0.5 * world.globalSpeedMult);
+      agent.vx = lerp(agent.vx, sv.vx, 0.1 * cappedDt);
+      agent.vy = lerp(agent.vy, sv.vy, 0.1 * cappedDt);
+    }
   }
 
   // Panicking overrides everything (except Observer)
@@ -516,10 +564,16 @@ function updateWanderer(agent: Agent, dt: number, world: WorldContext): void {
       agent.vx = sv.vx; agent.vy = sv.vy;
       agent.heading = Math.atan2(agent.vy, agent.vx);
       if (dist(agent.x, agent.y, cmX, cmY) < COFFEE_APPROACH_DIST) {
-        agent.state = AgentState.AT_COFFEE;
-        agent.coffeeTimer = randRange(COFFEE_DWELL_MIN, COFFEE_DWELL_MAX);
-        agent.vx = 0; agent.vy = 0;
-        agent.flashTimer = 0.5; // brief happy flash
+        if (world.coffeeBroken) {
+          // Machine broken - wander away disappointed
+          agent.heading = Math.atan2(agent.y - cmY, agent.x - cmX);
+          agent.state = AgentState.WANDERING;
+        } else {
+          agent.state = AgentState.AT_COFFEE;
+          agent.coffeeTimer = randRange(COFFEE_DWELL_MIN, COFFEE_DWELL_MAX);
+          agent.vx = 0; agent.vy = 0;
+          agent.flashTimer = 0.5; // brief happy flash
+        }
       }
       break;
     }

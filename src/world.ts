@@ -5,6 +5,7 @@
 import {
   AgentType, AgentState, EventType,
   Desk, CoffeeMachine, Exit, PizzaEntity, CatEntity, MeetingRoom, LogEvent,
+  MusicSource, PingPongZone,
 } from './types.js';
 import {
   WORLD_WIDTH, WORLD_HEIGHT,
@@ -19,6 +20,12 @@ import {
   START_GRINDERS, START_WANDERERS, START_GOSSIPS, START_MANAGERS, START_INTERNS, START_CHAOS,
   MOBILE_AGENT_COUNT, MOBILE_BREAKPOINT,
   COLORS,
+  COFFEE_SPILL_DURATION,
+  MONDAY_SPEED_MULT,
+  REPLY_ALL_FREEZE_MIN, REPLY_ALL_FREEZE_MAX,
+  POWER_NAP_DURATION_MIN, POWER_NAP_DURATION_MAX,
+  LOUD_MUSIC_DURATION,
+  PING_PONG_DURATION,
 } from './constants.js';
 import {
   Agent, updateAgent, WorldContext, ParticleOpts, randRange, steerToward, dist,
@@ -29,6 +36,7 @@ import {
   createOfficeLayout, clampToWorld, randomEdgePosition, randomWorldPosition,
 } from './office.js';
 import { checkEasterEggs, EasterEggState } from './eastereggs.js';
+import { ChatSystem } from './chat.js';
 
 export interface DisturbanceCallbacks {
   onLog: (text: string, type: EventType) => void;
@@ -36,6 +44,7 @@ export interface DisturbanceCallbacks {
   onChaosChange: (value: number) => void;
   onObserverUnlock: () => void;
   onPaletteShift: (active: boolean) => void;
+  onMondayMode?: (active: boolean) => void;
 }
 
 export class World {
@@ -50,12 +59,21 @@ export class World {
   particles: ParticleSystem;
   quadtree: Quadtree;
   quadPoints: QuadPoint[];
+  chat: ChatSystem;
 
   fridayMode: boolean;
   alarmActive: boolean;
   alarmTimer: number;
   globalSpeedMult: number;
   observerUnlocked: boolean;
+
+  // New disturbance states
+  coffeeBroken: boolean;
+  coffeeRepairTimer: number;
+  mondayMode: boolean;
+  musicSource: MusicSource | null;
+  pingPongZone: PingPongZone | null;
+  powerNapZzzTimer: number;
 
   productivity: number;
   morale: number;
@@ -111,6 +129,7 @@ export class World {
     this.particles = new ParticleSystem();
     this.quadtree = new Quadtree(WORLD_WIDTH, WORLD_HEIGHT);
     this.quadPoints = [];
+    this.chat = new ChatSystem();
     this.fridayMode = false;
     this.alarmActive = false;
     this.alarmTimer = 0;
@@ -133,6 +152,14 @@ export class World {
     this._nextPizzaId = 0;
     this._nextCatId = 0;
     this._nextMeetingId = 0;
+
+    // New disturbance state
+    this.coffeeBroken = false;
+    this.coffeeRepairTimer = 0;
+    this.mondayMode = false;
+    this.musicSource = null;
+    this.pingPongZone = null;
+    this.powerNapZzzTimer = 0;
 
     this.eggState = {
       observerUnlocked: this.observerUnlocked,
@@ -252,6 +279,12 @@ export class World {
     this.updateCat(cappedDt);
     this.updateMeetingRoom(cappedDt);
     this.updateAlarm(cappedDt);
+    this.updateCoffeeRepair(cappedDt);
+    this.updateMusicSource(cappedDt);
+    this.updatePingPong(cappedDt);
+
+    // Power nap Zzz particles
+    this.updatePowerNapZzz(cappedDt);
 
     // Update particles
     this.particles.update(cappedDt);
@@ -279,6 +312,9 @@ export class World {
         }
       }
     }
+
+    // Chat idle messages
+    this.chat.updateIdle(cappedDt, this.agents);
 
     // FPS-based agent cull
     if (this.fps < 30 && this.agents.length > 60) {
@@ -313,7 +349,10 @@ export class World {
       meetingRoom: this.meetingRoom,
       fridayMode: this.fridayMode,
       alarmActive: this.alarmActive,
+      coffeeBroken: this.coffeeBroken,
       globalSpeedMult: this.globalSpeedMult,
+      musicSource: this.musicSource ? { x: this.musicSource.x, y: this.musicSource.y } : null,
+      pingPongZone: this.pingPongZone ? { x: this.pingPongZone.x, y: this.pingPongZone.y } : null,
       spawnParticle: (x, y, color, count = 6, opts?: ParticleOpts) => {
         self.particles.spawn(x, y, color, count, opts);
       },
@@ -346,7 +385,6 @@ export class World {
   }
 
   private applySeparation(dt: number): void {
-    // Simple grid-based separation to avoid nested quadtree queries
     for (const agent of this.agents) {
       if (agent.state === AgentState.SEATED || agent.state === AgentState.ESCAPED) continue;
       const nearby = this.quadtree.query(agent.x, agent.y, PERSONAL_RADIUS * 2);
@@ -381,10 +419,8 @@ export class World {
       if (agent.x !== clamped.x || agent.y !== clamped.y) {
         agent.x = clamped.x;
         agent.y = clamped.y;
-        // Reflect
         if (agent.x <= 16 || agent.x >= WORLD_WIDTH - 16) agent.vx *= -0.8;
         if (agent.y <= 16 || agent.y >= WORLD_HEIGHT - 16) agent.vy *= -0.8;
-        // Update heading
         agent.heading = Math.atan2(agent.vy, agent.vx);
         if (agent.type === AgentType.WANDERER && agent.state === AgentState.WANDERING) {
           agent.state = AgentState.BUMP_RECOVERY;
@@ -399,7 +435,7 @@ export class World {
   }
 
   // ============================================================
-  // Disturbances
+  // Disturbances (Original)
   // ============================================================
 
   dropPizza(worldX: number, worldY: number): void {
@@ -411,6 +447,7 @@ export class World {
     this.pizzas.push(pizza);
     this.particles.spawn(worldX, worldY, COLORS.PIZZA, 10, { speed: 80, gravity: 30 });
     this.addLog('🍕 Pizza dropped! Agents stampede.', EventType.WARNING);
+    this.chat.onPizza();
 
     for (const agent of this.agents) {
       if (agent.type === AgentType.OBSERVER) continue;
@@ -423,7 +460,6 @@ export class World {
         }
         agent.state = AgentState.EATING;
         agent.eatTimer = randRange(PIZZA_EAT_MIN, PIZZA_EAT_MAX);
-        // Walk toward pizza
         agent.vx = ((worldX - agent.x) / (d || 1)) * BASE_SPEED * 1.2;
         agent.vy = ((worldY - agent.y) / (d || 1)) * BASE_SPEED * 1.2;
       }
@@ -435,6 +471,7 @@ export class World {
     this.alarmActive = true;
     this.alarmTimer = ALARM_DURATION;
     this.addLog('🔥 FIRE ALARM! Evacuate NOW!', EventType.CHAOS);
+    this.chat.onFireAlarm();
 
     for (const agent of this.agents) {
       if (agent.type === AgentType.OBSERVER) continue;
@@ -451,7 +488,6 @@ export class World {
 
   dropCat(worldX: number, worldY: number): void {
     if (this.cat) {
-      // Remove existing cat
       this.cat = null;
     }
     this.cat = {
@@ -463,6 +499,7 @@ export class World {
       timer: CAT_DURATION,
     };
     this.addLog('🐱 A cat appeared! Office divided.', EventType.WARNING);
+    this.chat.onCatAppear();
 
     for (const agent of this.agents) {
       if (agent.type === AgentType.OBSERVER) continue;
@@ -472,7 +509,6 @@ export class World {
 
   placeMeetingRoom(x: number, y: number, w: number, h: number): void {
     if (this.meetingRoom) {
-      // End existing meeting
       this.endMeeting();
     }
     this.meetingRoom = {
@@ -482,15 +518,14 @@ export class World {
       occupants: new Set(),
     };
     this.addLog('📊 Meeting room placed! Manager activates.', EventType.INFO);
+    this.chat.onMeeting();
 
-    // Activate manager herding
     for (const agent of this.agents) {
       if (agent.type === AgentType.MANAGER) {
         agent.state = AgentState.HERDING;
       }
     }
 
-    // Herd up to MEETING_CAPACITY other agents
     let herded = 0;
     for (const agent of this.agents) {
       if (herded >= MEETING_CAPACITY) break;
@@ -509,7 +544,6 @@ export class World {
     this.fridayMode = enabled;
     if (enabled) {
       this.globalSpeedMult *= FRIDAY_SPEED_MULT;
-      // Spawn extra wanderers
       const currentWanderers = this.agents.filter(a => a.type === AgentType.WANDERER).length;
       const toSpawn = currentWanderers * 2;
       for (let i = 0; i < toSpawn; i++) {
@@ -518,14 +552,13 @@ export class World {
         this.fridayExtraWanderers.add(agent.id);
       }
       this.addLog('🎉 Friday afternoon! Productivity leaves the building.', EventType.WARNING);
-      // Check 17:01 easter egg
+      this.chat.onFridayMode(true);
       const now = new Date();
       if (now.getDay() === 5 && now.getHours() === 17 && now.getMinutes() >= 1) {
         this.trigger1701();
       }
     } else {
       this.globalSpeedMult /= FRIDAY_SPEED_MULT;
-      // Remove extra wanderers
       this.agents = this.agents.filter(a => {
         if (this.fridayExtraWanderers.has(a.id)) {
           return false;
@@ -534,20 +567,172 @@ export class World {
       });
       this.fridayExtraWanderers.clear();
       this.addLog('📅 Back to Monday mindset.', EventType.INFO);
+      this.chat.onFridayMode(false);
     }
   }
 
   trigger1701(): void {
     this.addLog('⏰ It\'s 17:01 on a Friday. Maximum entropy.', EventType.CHAOS);
     this.callbacks.onToast('🎉 17:01 Friday Mode! Freedom imminent...');
+    this.chat.on1701();
     this.globalSpeedMult *= 0.7;
-    // Spawn even more wanderers
     const toSpawn = this.agents.filter(a => a.type === AgentType.WANDERER).length;
     for (let i = 0; i < toSpawn; i++) {
       const pos = randomEdgePosition();
       const agent = this.spawnAgent(AgentType.WANDERER, pos.x, pos.y);
       this.fridayExtraWanderers.add(agent.id);
     }
+  }
+
+  // ============================================================
+  // NEW DISTURBANCES
+  // ============================================================
+
+  coffeeSpill(): void {
+    if (this.coffeeBroken) return;
+    this.coffeeBroken = true;
+    this.coffeeRepairTimer = COFFEE_SPILL_DURATION;
+    this.particles.spawnCoffeeSplash(this.coffeeMachine.x + this.coffeeMachine.width / 2,
+      this.coffeeMachine.y + this.coffeeMachine.height / 2);
+
+    // Find a nearby chaos agent or wanderer to attribute it to
+    const culprit = this.agents.find(a => a.type === AgentType.CHAOS_AGENT) ??
+                    this.agents.find(a => a.type === AgentType.WANDERER);
+
+    this.addLog('☕ Coffee machine broken! Agents distraught.', EventType.WARNING);
+    this.chat.onCoffeeSpill(culprit?.name ?? 'Someone');
+    this.callbacks.onToast('☕ Coffee machine OUT OF ORDER!');
+
+    // Agents heading to coffee must turn around
+    for (const agent of this.agents) {
+      if (agent.state === AgentState.HEADING_TO_COFFEE || agent.state === AgentState.AT_COFFEE) {
+        agent.state = AgentState.WANDERING;
+        agent.heading = Math.random() * Math.PI * 2;
+      }
+    }
+  }
+
+  mondayModeToggle(): void {
+    this.mondayMode = !this.mondayMode;
+    if (this.mondayMode) {
+      this.globalSpeedMult *= MONDAY_SPEED_MULT;
+      this.addLog('💀 Monday Mode activated. Everything is grey.', EventType.CHAOS);
+      this.chat.onMondayMode(true);
+      this.callbacks.onToast('💀 Monday Mode: everything is terrible.');
+      this.callbacks.onMondayMode?.(true);
+    } else {
+      this.globalSpeedMult /= MONDAY_SPEED_MULT;
+      this.addLog('☀️ Monday Mode deactivated.', EventType.GOOD);
+      this.chat.onMondayMode(false);
+      this.callbacks.onToast('☀️ Energy slowly returning...');
+      this.callbacks.onMondayMode?.(false);
+    }
+  }
+
+  replyAll(): void {
+    // Find a chaos agent or gossip as culprit
+    const culprit = this.agents.find(a => a.type === AgentType.CHAOS_AGENT) ??
+                    this.agents.find(a => a.type === AgentType.GOSSIP) ??
+                    this.agents[0];
+
+    this.addLog('📧 Reply-All email sent! Everyone is distracted.', EventType.WARNING);
+    this.chat.onReplyAll(culprit?.name ?? 'Someone');
+    this.callbacks.onToast('📧 REPLY-ALL chaos! The damage is done.');
+
+    // Freeze agents briefly to "read their phone"
+    for (const agent of this.agents) {
+      if (agent.type === AgentType.OBSERVER) continue;
+      if (agent.state === AgentState.PANICKING || agent.state === AgentState.ESCAPED) continue;
+      const prevState = agent.state;
+      if (prevState === AgentState.SEATED) this.releaseDesk(agent.id);
+      agent.state = AgentState.READING_PHONE;
+      agent.stateTimer = randRange(REPLY_ALL_FREEZE_MIN, REPLY_ALL_FREEZE_MAX);
+      agent.vx = 0; agent.vy = 0;
+    }
+
+    // Spawn phone-reading particles
+    for (const agent of this.agents) {
+      if (Math.random() < 0.3) {
+        this.particles.spawn(agent.x, agent.y, 0x5AADE8, 3, { speed: 20, gravity: -20, lifetime: 0.8 });
+      }
+    }
+  }
+
+  powerNap(): void {
+    // Pick a random grinder or wanderer at desk
+    const candidates = this.agents.filter(
+      a => (a.type === AgentType.GRINDER && a.state === AgentState.SEATED) ||
+           a.type === AgentType.WANDERER
+    );
+    if (candidates.length === 0) return;
+
+    const agent = candidates[Math.floor(Math.random() * candidates.length)];
+    if (agent.state !== AgentState.SEATED) {
+      // Move to nearest desk
+      const desk = this.findNearestFreeDeskFor(agent.x, agent.y, agent.id);
+      if (desk) {
+        this.claimDesk(agent.id, desk.id);
+        agent.x = desk.x + desk.width / 2;
+        agent.y = desk.y + desk.height / 2 + desk.height * 0.4;
+      }
+    }
+    agent.state = AgentState.POWER_NAP;
+    agent.stateTimer = randRange(POWER_NAP_DURATION_MIN, POWER_NAP_DURATION_MAX);
+    agent.vx = 0; agent.vy = 0;
+
+    this.addLog(`💤 ${agent.name} is power napping at their desk.`, EventType.INFO);
+    this.chat.onPowerNap(agent.name);
+    this.callbacks.onToast(`💤 ${agent.name} is power napping. Shhh.`);
+  }
+
+  loudMusic(): void {
+    if (this.musicSource) return; // already playing
+
+    // Pick a random agent to be the music source
+    const candidates = this.agents.filter(
+      a => a.type !== AgentType.OBSERVER && a.state !== AgentState.ESCAPED
+    );
+    if (candidates.length === 0) return;
+
+    const agent = candidates[Math.floor(Math.random() * candidates.length)];
+    this.musicSource = {
+      x: agent.x,
+      y: agent.y,
+      agentId: agent.id,
+      timer: LOUD_MUSIC_DURATION,
+    };
+
+    this.addLog(`🎵 ${agent.name} is playing VERY loud music.`, EventType.WARNING);
+    this.chat.onLoudMusic(agent.name);
+    this.callbacks.onToast(`🎵 ${agent.name} playing full blast! Agents fleeing.`);
+  }
+
+  newHire(): void {
+    const pos = randomEdgePosition();
+    const intern = this.spawnAgent(AgentType.INTERN, pos.x, pos.y);
+    intern.state = AgentState.IDLE;
+
+    this.addLog(`📦 New hire ${intern.name} joined the office!`, EventType.GOOD);
+    this.chat.onNewHire(intern.name);
+    this.callbacks.onToast(`📦 ${intern.name} has joined as intern!`);
+  }
+
+  pingPong(): void {
+    if (this.pingPongZone) return;
+
+    // Place ping pong zone in a corner away from desks
+    const ppX = WORLD_WIDTH - 150;
+    const ppY = 100;
+
+    this.pingPongZone = {
+      x: ppX,
+      y: ppY,
+      timer: PING_PONG_DURATION,
+    };
+
+    this.addLog('🏓 Ping Pong table deployed! Break room open.', EventType.INFO);
+    this.chat.onPingPong();
+    this.callbacks.onToast('🏓 Ping Pong! Break room is OPEN!');
   }
 
   // ============================================================
@@ -561,7 +746,6 @@ export class World {
       if (pizza.timer <= 0) {
         this.pizzas.splice(i, 1);
         this.addLog('🍕 Pizza demolished. Back to work.', EventType.INFO);
-        // Resume grinders
         for (const agent of this.agents) {
           if (agent.type === AgentType.GRINDER && agent.state === AgentState.POST_PIZZA) {
             agent.state = AgentState.SEEKING_DESK;
@@ -581,7 +765,6 @@ export class World {
       this.addLog('🐱 Cat wandered off. Office returns to normal.', EventType.INFO);
       return;
     }
-    // Cat wanders
     if (Math.random() < 0.02 * dt) {
       this.cat.heading += (Math.random() - 0.5) * Math.PI;
     }
@@ -620,6 +803,7 @@ export class World {
     }
     this.meetingRoom = null;
     this.addLog('📊 Meeting ended. Productivity returns (maybe).', EventType.INFO);
+    this.chat.onMeetingEnd();
   }
 
   private updateAlarm(dt: number): void {
@@ -628,7 +812,6 @@ export class World {
     if (this.alarmTimer <= 0) {
       this.alarmActive = false;
       this.addLog('🔔 All clear! Agents return from evacuation.', EventType.GOOD);
-      // Respawn escaped agents
       for (const agent of this.agents) {
         if (agent.state === AgentState.ESCAPED) {
           const pos = randomEdgePosition();
@@ -637,6 +820,65 @@ export class World {
         }
       }
       this.agents = this.agents.filter(a => a.state !== AgentState.ESCAPED);
+    }
+  }
+
+  private updateCoffeeRepair(dt: number): void {
+    if (!this.coffeeBroken) return;
+    this.coffeeRepairTimer -= dt;
+    if (this.coffeeRepairTimer <= 0) {
+      this.coffeeBroken = false;
+      this.addLog('☕ Coffee machine repaired!', EventType.GOOD);
+      this.chat.onCoffeeMachineFixed();
+    }
+  }
+
+  private updateMusicSource(dt: number): void {
+    if (!this.musicSource) return;
+    this.musicSource.timer -= dt;
+
+    // Update position to follow agent
+    const agent = this.agents.find(a => a.id === this.musicSource?.agentId);
+    if (agent) {
+      this.musicSource.x = agent.x;
+      this.musicSource.y = agent.y;
+    }
+
+    // Spawn musical particles
+    if (Math.random() < 0.3) {
+      this.particles.spawn(this.musicSource.x, this.musicSource.y, 0xF6D937, 2, {
+        speed: 50, gravity: -30, lifetime: 0.8, size: 4,
+      });
+    }
+
+    if (this.musicSource.timer <= 0) {
+      this.musicSource = null;
+      this.addLog('🎵 Music stopped. Office recovers.', EventType.INFO);
+      this.chat.onLoudMusicEnd();
+    }
+  }
+
+  private updatePingPong(dt: number): void {
+    if (!this.pingPongZone) return;
+    this.pingPongZone.timer -= dt;
+    if (this.pingPongZone.timer <= 0) {
+      this.pingPongZone = null;
+      this.addLog('🏓 Break time over. Back to work.', EventType.INFO);
+      this.chat.onPingPongEnd();
+    }
+  }
+
+  private updatePowerNapZzz(dt: number): void {
+    this.powerNapZzzTimer -= dt;
+    if (this.powerNapZzzTimer <= 0) {
+      this.powerNapZzzTimer = 1.5;
+      for (const agent of this.agents) {
+        if (agent.state === AgentState.POWER_NAP) {
+          this.particles.spawn(agent.x, agent.y - 10, 0xAAAAFF, 2, {
+            speed: 15, gravity: -20, lifetime: 1.2, size: 5,
+          });
+        }
+      }
     }
   }
 
@@ -659,7 +901,6 @@ export class World {
     const activeAgents = this.agents.filter(a => a.state !== AgentState.ESCAPED);
     if (activeAgents.length === 0) return;
 
-    // Velocity variance
     let meanVx = 0, meanVy = 0;
     for (const a of activeAgents) { meanVx += a.vx; meanVy += a.vy; }
     meanVx /= activeAgents.length; meanVy /= activeAgents.length;
@@ -670,14 +911,12 @@ export class World {
     variance /= activeAgents.length;
     const vScore = Math.min(1, variance / (BASE_SPEED * BASE_SPEED));
 
-    // Cluster fragmentation
     const clusters = this.quadtree.findClusters(this.quadPoints, 60, 3);
     const fragScore = clusters.length === 0 ? 1
       : 1 - (Math.max(...clusters.map(c => c.length)) / activeAgents.length);
 
-    // Chaos agent switch rate
     const chaosScore = Math.min(1, this.chaosModeSwitches / 20);
-    this.chaosModeSwitches = 0; // reset per second
+    this.chaosModeSwitches = 0;
 
     const metric = (vScore * 0.4) + (fragScore * 0.4) + (chaosScore * 0.2);
     this.chaosHistory.push(metric);
@@ -685,14 +924,10 @@ export class World {
       this.chaosHistory.shift();
     }
 
-    // Rolling average
     const avg = this.chaosHistory.reduce((s, v) => s + v, 0) / this.chaosHistory.length;
     this.chaosIndex = avg;
-
-    // Morale inversely proportional to chaos
     this.morale = Math.max(0.1, 1 - avg * 0.8);
 
-    // Productivity: grinders seated / total potential
     const seated = this.agents.filter(a => a.type === AgentType.GRINDER && a.state === AgentState.SEATED).length;
     const inMeeting = this.agents.filter(a => a.state === AgentState.IN_MEETING).length;
     const totalWorkers = this.agents.filter(a => a.type !== AgentType.OBSERVER && a.state !== AgentState.ESCAPED).length;
@@ -771,5 +1006,9 @@ export class World {
     this.callbacks.onToast('👁 The Observer joins the office.');
     this.callbacks.onPaletteShift(true);
     this.addLog('👁 Observer unlocked via Codex Pentagon.', EventType.CHAOS);
+    this.chat.onObserverUnlocked();
   }
+
+  // Expose neighbour radius for easter egg checks
+  readonly _neighbourRadius = NEIGHBOUR_RADIUS;
 }

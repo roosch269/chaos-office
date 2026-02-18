@@ -5,6 +5,29 @@
 import { AgentType, EventType } from './types.js';
 import { World } from './world.js';
 
+// Color map for chat feed agent name labels
+const AGENT_CHAT_COLORS: Record<string, string> = {
+  GRINDER:     '#4A90E2',
+  WANDERER:    '#E8A838',
+  GOSSIP:      '#E24A6A',
+  MANAGER:     '#8B4AE2',
+  INTERN:      '#4AE28B',
+  CHAOS_AGENT: '#FF3B3B',
+  OBSERVER:    '#888888',
+  SYSTEM:      '#AAAAAA',
+};
+
+// Agent type emoji helpers (exported for use in main.ts agent popup)
+export const AGENT_TYPE_EMOJI: Record<string, string> = {
+  GRINDER:     '💻',
+  WANDERER:    '🚶',
+  GOSSIP:      '💬',
+  MANAGER:     '👔',
+  INTERN:      '🟢',
+  CHAOS_AGENT: '💥',
+  OBSERVER:    '👁',
+};
+
 export class UI {
   private world: World;
 
@@ -24,8 +47,10 @@ export class UI {
   private mStatProductivity: HTMLElement | null;
   private mStatChaos: HTMLElement | null;
 
-  // Event log
-  private logContainer: HTMLElement;
+  // Chat feed
+  private chatFeedEl: HTMLElement | null;
+  private mobileChatFeedEl: HTMLElement | null;
+  private lastRenderedChatId: number;
   private eventIdCounter: number;
 
   // Clock
@@ -51,7 +76,9 @@ export class UI {
     this.barProductivity = document.getElementById('bar-productivity')!;
     this.barMorale = document.getElementById('bar-morale')!;
     this.barChaos = document.getElementById('bar-chaos')!;
-    this.logContainer = document.getElementById('event-log-entries')!;
+    this.chatFeedEl = document.getElementById('chat-feed');
+    this.mobileChatFeedEl = document.getElementById('mobile-chat-feed');
+    this.lastRenderedChatId = -1;
     this.clockEl = document.getElementById('clock')!;
     this.fpsEl = document.getElementById('perf-display');
     this.toastContainer = document.getElementById('toast-container')!;
@@ -176,27 +203,58 @@ export class UI {
   }
 
   // ============================================================
-  // Event Log
+  // Event Log (kept for callback compatibility; display is now
+  // handled by updateChatFeed via world.chat.messages)
   // ============================================================
-  addLogEntry(text: string, type: EventType): void {
-    const now = new Date();
-    const ts = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  addLogEntry(_text: string, _type: EventType): void {
+    // The chat feed is populated by updateChatFeed() which reads
+    // directly from world.chat.messages. No separate DOM writes needed.
+    this.eventIdCounter++;
+  }
 
-    const entry = document.createElement('div');
-    entry.className = `event-entry ${type}`;
-    entry.dataset.id = String(this.eventIdCounter++);
-    entry.innerHTML = `
-      <div class="event-timestamp">${ts}</div>
-      <div class="event-text">${text}</div>
-    `;
-    this.logContainer.prepend(entry);
+  // ============================================================
+  // Chat Feed
+  // ============================================================
+  updateChatFeed(world: World): void {
+    const messages = world.chat.messages;
+    if (messages.length === 0) return;
 
-    // Age old entries
-    const entries = this.logContainer.querySelectorAll('.event-entry');
-    entries.forEach((el, i) => {
-      if (i > 10) el.classList.add('old');
-      if (i > 30) el.remove();
-    });
+    // Messages are stored newest-first (unshift). Find new ones.
+    const newMessages = messages.filter(m => m.id > this.lastRenderedChatId);
+    if (newMessages.length === 0) return;
+
+    // Advance the watermark
+    this.lastRenderedChatId = messages[0].id;
+
+    // newMessages are newest-first; reverse so oldest-of-new appends first
+    const ordered = [...newMessages].reverse();
+
+    const renderInto = (container: HTMLElement, capCount: number) => {
+      const frag = document.createDocumentFragment();
+      for (const msg of ordered) {
+        const entry = document.createElement('div');
+        entry.className = 'chat-entry';
+        const color = AGENT_CHAT_COLORS[msg.agentType] ?? '#AAAAAA';
+        const nameSpan = `<span class="chat-name" style="color:${color}">${msg.agentName}:</span>`;
+        entry.innerHTML = `${nameSpan} ${msg.text}`;
+        frag.appendChild(entry);
+      }
+      container.appendChild(frag);
+
+      // Cap total entries
+      const all = container.querySelectorAll('.chat-entry');
+      if (all.length > capCount) {
+        for (let i = 0; i < all.length - capCount; i++) {
+          all[i].remove();
+        }
+      }
+
+      // Auto-scroll to bottom
+      container.scrollTop = container.scrollHeight;
+    };
+
+    if (this.chatFeedEl) renderInto(this.chatFeedEl, 50);
+    if (this.mobileChatFeedEl) renderInto(this.mobileChatFeedEl, 20);
   }
 
   // ============================================================
@@ -241,6 +299,14 @@ export interface ActionBarCallbacks {
   onMeeting: () => void;
   onFridayToggle: (enabled: boolean) => void;
   onCanvasClick: (worldX: number, worldY: number) => void;
+  // New v2 disturbances
+  onCoffeeSpill?: () => void;
+  onMondayToggle?: () => void;
+  onReplyAll?: () => void;
+  onPowerNap?: () => void;
+  onLoudMusic?: () => void;
+  onNewHire?: () => void;
+  onPingPong?: () => void;
 }
 
 export function setupActionBar(
@@ -342,5 +408,39 @@ export function setupActionBar(
   placementOverlay.addEventListener('contextmenu', (e) => {
     e.preventDefault();
     exitPlacementMode();
+  });
+
+  // ── New v2 disturbance buttons ────────────────────────────
+  document.getElementById('btn-coffee-spill')?.addEventListener('click', () => {
+    callbacks.onCoffeeSpill?.();
+  });
+
+  // Monday mode — stateful toggle
+  const mondayBtn = document.getElementById('btn-monday-mode');
+  let mondayActive = false;
+  mondayBtn?.addEventListener('click', () => {
+    mondayActive = !mondayActive;
+    mondayBtn.classList.toggle('active', mondayActive);
+    callbacks.onMondayToggle?.();
+  });
+
+  document.getElementById('btn-reply-all')?.addEventListener('click', () => {
+    callbacks.onReplyAll?.();
+  });
+
+  document.getElementById('btn-power-nap')?.addEventListener('click', () => {
+    callbacks.onPowerNap?.();
+  });
+
+  document.getElementById('btn-loud-music')?.addEventListener('click', () => {
+    callbacks.onLoudMusic?.();
+  });
+
+  document.getElementById('btn-new-hire')?.addEventListener('click', () => {
+    callbacks.onNewHire?.();
+  });
+
+  document.getElementById('btn-ping-pong')?.addEventListener('click', () => {
+    callbacks.onPingPong?.();
   });
 }

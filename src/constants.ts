@@ -15,7 +15,7 @@ export const DESK_CLAIM_RADIUS = 14;
 export const TICK_DT_CAP = 0.05;
 
 // Agent sizes
-export const AGENT_RADIUS = 12; // visual radius in logical units
+export const AGENT_RADIUS = 12; // collision radius in logical units
 
 // Grinder
 export const GRINDER_AURA_RADIUS = 120;
@@ -99,7 +99,7 @@ export const CHAOS_ORDER_HYSTERESIS = 0.05;
 export const CHAOS_METRIC_WINDOW = 10;
 
 // Mobile
-export const MOBILE_AGENT_COUNT = 80;
+export const MOBILE_AGENT_COUNT = 20;
 export const MOBILE_BREAKPOINT = 768;
 
 // Particle system
@@ -121,6 +121,18 @@ export const DESK_HEIGHT = 36;
 export const DESK_GAP_X = 90;
 export const DESK_GAP_Y = 80;
 
+// New disturbances
+export const COFFEE_SPILL_DURATION = 20;
+export const MONDAY_SPEED_MULT = 0.3;
+export const REPLY_ALL_FREEZE_MIN = 2;
+export const REPLY_ALL_FREEZE_MAX = 5;
+export const POWER_NAP_DURATION_MIN = 8;
+export const POWER_NAP_DURATION_MAX = 15;
+export const LOUD_MUSIC_DURATION = 18;
+export const LOUD_MUSIC_AVOID_RADIUS = 180;
+export const PING_PONG_DURATION = 25;
+export const PING_PONG_RADIUS = 160;
+
 // Colors (PIXI hex format 0xRRGGBB)
 export const COLORS = {
   GRINDER:      0x4A90E2,
@@ -130,7 +142,7 @@ export const COLORS = {
   INTERN:       0x4AE28B,
   CHAOS_AGENT:  0xFF3B3B,
   OBSERVER:     0x2A2A2A,
-  FLOOR:        0x88AF92,
+  FLOOR:        0xF5ECD7,
   DESK:         0xF8A153,
   DESK_DARK:    0xC47030,
   DESK_TOP:     0xFFBB77,
@@ -140,7 +152,7 @@ export const COLORS = {
   CAT:          0xF8A153,
   MEETING_ROOM: 0x46A45F,
   WALL:         0xC4BBB8,
-  CARPET:       0x88AF92,
+  CARPET:       0xF5ECD7,
   PARTICLE_COFFEE: 0x5C3D2E,
   PARTICLE_FIRE: 0xEF6361,
   PARTICLE_GOSSIP: 0xE24A6A,
@@ -150,4 +162,78 @@ export const COLORS = {
   CHALK:        0xC4BBB8,
   DUST_ROSE:    0xC7555E,
   PEACH_ORANGE: 0xF8A153,
+  SKIN:         0xFFD5A5,
+  PLANT_POT:    0xC47030,
+  PLANT_LEAF:   0x3AAA5F,
+  WATER_COOLER: 0xAAD4F5,
+  PRINTER:      0x8899AA,
 } as const;
+
+// Agent names pool
+export const AGENT_NAMES = [
+  'Dave', 'Karen', 'Chad', 'Steve', 'Linda', 'Bob', 'Janet', 'Mike',
+  'Susan', 'Greg', 'Debra', 'Kevin', 'Pam', 'Jim', 'Dwight', 'Michael',
+  'Angela', 'Oscar', 'Stanley', 'Phyllis', 'Toby', 'Ryan', 'Kelly',
+  'Meredith', 'Creed', 'Andy', 'Erin', 'Gabe', 'Holly', 'Jan',
+  'Roy', 'Darryl', 'Nellie', 'Pete', 'Clark', 'Val', 'Ellie', 'Jordan',
+];
+
+// Random idle chat messages per type
+export const IDLE_CHATS: Record<string, string[]> = {
+  GRINDER: [
+    'Anyone seen the TPS reports?',
+    '*types aggressively*',
+    'Just one more commit...',
+    'The deadline is WHEN?!',
+    'Have you tried turning it off and on?',
+    'I\'ll sleep when I\'m dead.',
+  ],
+  WANDERER: [
+    'Is there any coffee left?',
+    '*wanders aimlessly*',
+    'Has anyone seen my mug?',
+    'Where even am I right now.',
+    'I need caffeine stat.',
+    'Just stretching my legs...',
+  ],
+  GOSSIP: [
+    'Did you hear about the new policy?',
+    'Between you and me...',
+    'I shouldn\'t say this but...',
+    'The manager was FURIOUS.',
+    'Guess who got a raise?',
+    'I heard it from Janet.',
+  ],
+  MANAGER: [
+    'Back to work, everyone!',
+    'We need to synergize.',
+    'Let\'s circle back on that.',
+    'My door is always open.',
+    'Going forward, team...',
+    'Let\'s take this offline.',
+  ],
+  INTERN: [
+    '*follows nervously*',
+    'Should I be doing something?',
+    'Is this right?',
+    'Nobody tells me anything.',
+    'I just started here...',
+    'What\'s the WiFi password?',
+  ],
+  CHAOS_AGENT: [
+    'YOLO!',
+    'Oops, my bad.',
+    'Who broke the printer AGAIN?',
+    'I do what I want.',
+    'Embrace the chaos.',
+    '*tips over coffee*',
+  ],
+  OBSERVER: [
+    '...',
+    '*scribbles notes*',
+    'Interesting.',
+    '*watches quietly*',
+    'Fascinating behavior.',
+    'Data point acquired.',
+  ],
+};

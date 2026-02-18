@@ -8,7 +8,7 @@
 import { Application } from 'pixi.js';
 import { World } from './world.js';
 import { Renderer } from './renderer.js';
-import { UI, setupActionBar } from './ui.js';
+import { UI, setupActionBar, AGENT_TYPE_EMOJI } from './ui.js';
 import { AgentType, EventType } from './types.js';
 import { randomWorldPosition } from './office.js';
 import { WORLD_WIDTH, WORLD_HEIGHT, MOBILE_BREAKPOINT } from './constants.js';
@@ -108,6 +108,28 @@ async function main(): Promise<void> {
       onFridayToggle: (enabled: boolean) => {
         world.toggleFridayMode(enabled);
       },
+      // New v2 disturbances
+      onCoffeeSpill: () => {
+        world.coffeeSpill();
+      },
+      onMondayToggle: () => {
+        world.mondayModeToggle();
+      },
+      onReplyAll: () => {
+        world.replyAll();
+      },
+      onPowerNap: () => {
+        world.powerNap();
+      },
+      onLoudMusic: () => {
+        world.loudMusic();
+      },
+      onNewHire: () => {
+        world.newHire();
+      },
+      onPingPong: () => {
+        world.pingPong();
+      },
       onCanvasClick: (worldX: number, worldY: number) => {
         if (pendingDisturbance === 'PIZZA') {
           world.dropPizza(worldX, worldY);
@@ -128,6 +150,36 @@ async function main(): Promise<void> {
     (sx, sy) => renderer.screenToWorld(sx, sy)
   );
 
+  // ─── Agent popup setup ────────────────────────────────────
+  const agentPopup = document.getElementById('agent-popup');
+  const popupName = document.getElementById('popup-name');
+  const popupType = document.getElementById('popup-type');
+  const popupState = document.getElementById('popup-state');
+  document.getElementById('popup-close')?.addEventListener('click', () => {
+    agentPopup?.classList.remove('visible');
+  });
+
+  function showAgentPopup(worldX: number, worldY: number): boolean {
+    const INSPECT_RADIUS = 30;
+    let nearest: typeof world.agents[0] | null = null;
+    let nearestDist = Infinity;
+    for (const agent of world.agents) {
+      if ((agent.state as string) === 'ESCAPED') continue;
+      const d = Math.hypot(agent.x - worldX, agent.y - worldY);
+      if (d < INSPECT_RADIUS && d < nearestDist) {
+        nearest = agent;
+        nearestDist = d;
+      }
+    }
+    if (!nearest || !agentPopup) return false;
+    const emoji = AGENT_TYPE_EMOJI[nearest.type] ?? '❓';
+    if (popupName) popupName.textContent = nearest.name;
+    if (popupType) popupType.textContent = `${emoji} ${nearest.type}`;
+    if (popupState) popupState.textContent = String(nearest.state).replace(/_/g, ' ');
+    agentPopup.classList.add('visible');
+    return true;
+  }
+
   // ─── Canvas click for direct interaction ─────────────────
   app.canvas.addEventListener('click', (e: MouseEvent) => {
     const rect = (app.canvas as HTMLCanvasElement).getBoundingClientRect();
@@ -146,6 +198,9 @@ async function main(): Promise<void> {
         );
       }
       pendingDisturbance = null;
+    } else {
+      // Try to inspect nearest agent
+      showAgentPopup(worldPos.x, worldPos.y);
     }
   });
 
@@ -186,6 +241,7 @@ async function main(): Promise<void> {
 
   // ─── Stat update throttle ─────────────────────────────────
   let uiTimer = 0;
+  let chatFeedTimer = 0;
 
   // ─── Main game loop ───────────────────────────────────────
   app.ticker.add((ticker) => {
@@ -197,11 +253,18 @@ async function main(): Promise<void> {
     // Render
     renderer.render(world);
 
-    // Update UI at reduced rate (every 200ms)
+    // Update UI stats at reduced rate (every 200ms)
     uiTimer += dt;
     if (uiTimer >= 0.2) {
       uiTimer = 0;
       uiInstance?.update(world);
+    }
+
+    // Update chat feed at reduced rate (every 500ms)
+    chatFeedTimer += dt;
+    if (chatFeedTimer >= 0.5) {
+      chatFeedTimer = 0;
+      uiInstance?.updateChatFeed(world);
     }
   });
 

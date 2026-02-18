@@ -52,6 +52,9 @@ export enum AgentState {
   POST_ALARM = 'POST_ALARM',
   POST_MEETING = 'POST_MEETING',
   GRID_OVERRIDE = 'GRID_OVERRIDE',
+  // New disturbance states
+  READING_PHONE = 'READING_PHONE',
+  POWER_NAP = 'POWER_NAP',
 }
 
 export enum ChaosMode {
@@ -170,4 +173,31 @@ export interface WorldState {
   alarmActive: boolean;
   observerUnlocked: boolean;
   meetingRoom: MeetingRoom | null;
+}
+
+export interface ChatMessage {
+  id: number;
+  agentName: string;
+  agentType: AgentType | 'SYSTEM';
+  text: string;
+  timestamp: number;
+}
+
+export interface MusicSource {
+  x: number;
+  y: number;
+  agentId: number;
+  timer: number;
+}
+
+export interface PingPongZone {
+  x: number;
+  y: number;
+  timer: number;
+}
+
+export interface OfficeProps {
+  plants: { x: number; y: number }[];
+  waterCooler: { x: number; y: number };
+  printer: { x: number; y: number };
 }

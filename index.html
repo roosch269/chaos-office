@@ -10,7 +10,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=IBM+Plex+Mono:wght@300;400;500&family=Nunito:wght@400;600;700&family=VT323&display=swap" rel="stylesheet" />
   <style>
     :root {
-      /* Base Palette */
       --warm-sand: #EFD0AE;
       --sunflower: #F6D937;
       --peach-orange: #F8A153;
@@ -23,8 +22,6 @@
       --seafoam: #74A8A2;
       --forest-green: #46A45F;
       --sage: #88AF92;
-
-      /* UI Chrome Palette */
       --espresso: #2C1F1A;
       --dark-roast: #3D2B22;
       --walnut: #5C3D2E;
@@ -35,17 +32,13 @@
       --punch: #FF6B6B;
       --cream: #F0E8D0;
       --warm-grey: #BEB0A0;
+      --floor-cream: #F5ECD7;
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
     html, body {
-      width: 100%;
-      height: 100%;
+      width: 100%; height: 100%;
       overflow: hidden;
       background: var(--espresso);
       color: var(--cream);
@@ -55,26 +48,26 @@
     #app {
       display: flex;
       flex-direction: column;
-      width: 100%;
-      height: 100%;
+      width: 100%; height: 100%;
     }
 
-    /* TOP BAR */
+    /* ─── TOP BAR ─────────────────────────────────────── */
     #top-bar {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      height: 48px;
-      min-height: 48px;
+      height: 44px;
+      min-height: 44px;
       background: var(--espresso);
       border-bottom: 2px solid var(--walnut);
-      padding: 0 16px;
+      padding: 0 12px;
       z-index: 100;
+      flex-shrink: 0;
     }
 
     #top-bar .title {
       font-family: 'Press Start 2P', monospace;
-      font-size: 12px;
+      font-size: 11px;
       color: var(--amber);
       text-shadow: 0 0 8px rgba(232,164,74,0.4);
     }
@@ -88,24 +81,20 @@
     #top-bar .chaos-meter {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
     }
 
     #top-bar .chaos-label {
       font-family: 'IBM Plex Mono', monospace;
-      font-size: 11px;
+      font-size: 10px;
       color: var(--warm-grey);
       text-transform: uppercase;
     }
 
-    #chaos-dots {
-      display: flex;
-      gap: 4px;
-    }
+    #chaos-dots { display: flex; gap: 4px; }
 
     .chaos-dot {
-      width: 10px;
-      height: 10px;
+      width: 10px; height: 10px;
       border-radius: 50%;
       background: var(--walnut);
       border: 1px solid var(--warm-grey);
@@ -118,35 +107,33 @@
       background: none;
       border: 1px solid var(--walnut);
       color: var(--warm-grey);
-      width: 24px;
-      height: 24px;
+      width: 24px; height: 24px;
       border-radius: 50%;
       cursor: pointer;
       font-family: 'Nunito', sans-serif;
-      font-size: 12px;
-      font-weight: 700;
+      font-size: 12px; font-weight: 700;
       transition: all 0.2s;
     }
     #help-btn:hover { border-color: var(--amber); color: var(--amber); }
 
-    /* MAIN CONTENT */
+    /* ─── MAIN CONTENT ────────────────────────────────── */
     #main-content {
       display: flex;
       flex: 1;
       overflow: hidden;
+      min-height: 0;
     }
 
-    /* STATS PANEL */
+    /* ─── STATS PANEL ─────────────────────────────────── */
     #stats-panel {
-      width: 200px;
-      min-width: 200px;
+      width: 190px; min-width: 190px;
       background: var(--dark-roast);
       border-right: 2px solid var(--walnut);
       overflow-y: auto;
-      padding: 12px 10px;
+      padding: 10px 8px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
     }
 
     .panel-section {
@@ -180,19 +167,17 @@
 
     .stat-value {
       font-family: 'IBM Plex Mono', monospace;
-      font-size: 11px;
-      font-weight: 500;
+      font-size: 11px; font-weight: 500;
       color: var(--cream);
-      min-width: 4ch;
-      text-align: right;
+      min-width: 4ch; text-align: right;
     }
 
     .stat-bar-container {
-      height: 6px;
+      height: 5px;
       background: var(--walnut);
       border-radius: 3px;
       overflow: hidden;
-      margin-bottom: 6px;
+      margin-bottom: 5px;
     }
 
     .stat-bar {
@@ -205,7 +190,6 @@
     .stat-bar.chaos { background: var(--coral-red); }
     .stat-bar.morale { background: var(--amber); }
 
-    /* Agent type list */
     .agent-type-row {
       display: flex;
       align-items: center;
@@ -214,8 +198,7 @@
     }
 
     .agent-dot {
-      width: 10px;
-      height: 10px;
+      width: 10px; height: 10px;
       border-radius: 50%;
       flex-shrink: 0;
     }
@@ -231,24 +214,22 @@
       font-family: 'IBM Plex Mono', monospace;
       font-size: 10px;
       color: var(--cream);
-      min-width: 2ch;
-      text-align: right;
+      min-width: 2ch; text-align: right;
     }
 
-    /* CANVAS CONTAINER */
+    /* ─── CANVAS CONTAINER ────────────────────────────── */
     #canvas-container {
       flex: 1;
       position: relative;
       overflow: hidden;
-      background: #88AF92;
+      background: var(--floor-cream);
       min-width: 0;
     }
 
     #canvas-container canvas {
       display: block;
       position: absolute;
-      top: 0;
-      left: 0;
+      top: 0; left: 0;
       width: 100% !important;
       height: 100% !important;
       image-rendering: pixelated;
@@ -258,15 +239,12 @@
     /* Placement cursor overlay */
     #placement-overlay {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
       cursor: crosshair;
       display: none;
       z-index: 10;
     }
-
     #placement-overlay.active { display: block; }
 
     #placement-hint {
@@ -282,12 +260,12 @@
       font-family: 'Nunito', sans-serif;
       font-size: 12px;
       pointer-events: none;
+      white-space: nowrap;
     }
 
-    /* EVENT LOG */
+    /* ─── CHAT FEED (desktop: right panel) ────────────── */
     #event-log {
-      width: 250px;
-      min-width: 250px;
+      width: 240px; min-width: 240px;
       background: var(--dark-roast);
       border-left: 2px solid var(--walnut);
       overflow: hidden;
@@ -306,85 +284,160 @@
       flex-shrink: 0;
     }
 
-    #event-log-entries {
+    #chat-feed {
+      flex: 1;
+      overflow-y: auto;
+      padding: 4px 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #chat-feed::-webkit-scrollbar { width: 4px; }
+    #chat-feed::-webkit-scrollbar-track { background: var(--dark-roast); }
+    #chat-feed::-webkit-scrollbar-thumb { background: var(--walnut); border-radius: 2px; }
+
+    .chat-entry {
+      padding: 4px 10px;
+      border-bottom: 1px solid rgba(92, 61, 46, 0.2);
+      animation: slideIn 0.2s ease-out;
+      font-family: 'VT323', monospace;
+      font-size: 14px;
+      color: var(--cream);
+      line-height: 1.3;
+      word-break: break-word;
+    }
+
+    .chat-entry.system { color: var(--sunflower); }
+
+    .chat-name {
+      font-weight: bold;
+      margin-right: 3px;
+    }
+
+    @keyframes slideIn {
+      from { transform: translateY(-6px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    /* ─── MOBILE CHAT STRIP ───────────────────────────── */
+    #mobile-chat {
+      display: none;
+      flex-direction: column;
+      background: var(--dark-roast);
+      border-top: 2px solid var(--walnut);
+      flex-shrink: 0;
+    }
+
+    .mobile-chat-header {
+      padding: 4px 10px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 9px;
+      color: var(--amber);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border-bottom: 1px solid var(--walnut);
+      flex-shrink: 0;
+    }
+
+    #mobile-chat-feed {
       flex: 1;
       overflow-y: auto;
       padding: 4px 0;
     }
 
-    #event-log-entries::-webkit-scrollbar { width: 4px; }
-    #event-log-entries::-webkit-scrollbar-track { background: var(--dark-roast); }
-    #event-log-entries::-webkit-scrollbar-thumb { background: var(--walnut); border-radius: 2px; }
+    #mobile-chat-feed::-webkit-scrollbar { width: 3px; }
+    #mobile-chat-feed::-webkit-scrollbar-thumb { background: var(--walnut); }
 
-    .event-entry {
-      padding: 5px 10px;
-      border-bottom: 1px solid rgba(92, 61, 46, 0.3);
-      animation: slideIn 0.2s ease-out;
-      transition: opacity 0.5s;
-    }
-
-    .event-entry.old { opacity: 0.4; }
-
-    @keyframes slideIn {
-      from { transform: translateY(-8px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
-    }
-
-    .event-timestamp {
-      font-family: 'IBM Plex Mono', monospace;
-      font-size: 9px;
-      color: var(--warm-grey);
-      margin-bottom: 1px;
-    }
-
-    .event-text {
-      font-family: 'VT323', monospace;
-      font-size: 14px;
-      color: var(--cream);
-      line-height: 1.3;
-    }
-
-    .event-entry.chaos .event-text { color: var(--punch); }
-    .event-entry.good .event-text { color: var(--mint-green); }
-    .event-entry.info .event-text { color: var(--clear-blue); }
-    .event-entry.warning .event-text { color: var(--amber); }
-
-    /* ACTION BAR */
+    /* ─── ACTION BAR ──────────────────────────────────── */
     #action-bar {
-      height: 56px;
-      min-height: 56px;
+      height: 60px;
+      min-height: 60px;
       background: var(--espresso);
       border-top: 2px solid var(--walnut);
       display: flex;
       align-items: center;
-      padding: 0 12px;
-      gap: 8px;
+      padding: 0 8px;
+      gap: 6px;
       overflow-x: auto;
+      overflow-y: hidden;
       z-index: 100;
+      flex-shrink: 0;
+      scrollbar-width: none;
+    }
+    #action-bar::-webkit-scrollbar { display: none; }
+
+    .icon-btn {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      border: 2px solid var(--walnut);
+      background: var(--dark-roast);
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.15s;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      position: relative;
     }
 
-    .action-group {
-      display: flex;
-      gap: 6px;
-      align-items: center;
+    .icon-btn:hover {
+      border-color: var(--amber);
+      background: var(--walnut);
+      transform: scale(1.08);
     }
+    .icon-btn:active { transform: scale(0.9); }
+
+    .icon-btn--chaos {
+      border-color: var(--punch);
+      animation: pulseBtn 2s infinite;
+    }
+    .icon-btn--chaos:hover { border-color: #ff8888; }
+
+    @keyframes pulseBtn {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(255, 107, 107, 0.4); }
+      50% { box-shadow: 0 0 0 5px rgba(255, 107, 107, 0); }
+    }
+
+    .icon-btn--toggle.active {
+      background: var(--sunflower);
+      border-color: var(--sunflower);
+    }
+
+    .icon-btn--warning { border-color: var(--amber); }
+    .icon-btn--good { border-color: var(--mint-green); }
+
+    /* Tooltip on hover (desktop) */
+    .icon-btn::after {
+      content: attr(title);
+      position: absolute;
+      bottom: calc(100% + 6px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--espresso);
+      color: var(--cream);
+      border: 1px solid var(--walnut);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-family: 'Nunito', sans-serif;
+      font-size: 11px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s;
+      z-index: 200;
+    }
+    .icon-btn:hover::after { opacity: 1; }
 
     .action-divider {
-      width: 1px;
-      height: 32px;
+      width: 1px; height: 36px;
       background: var(--walnut);
       flex-shrink: 0;
     }
 
-    .action-label {
-      font-family: 'IBM Plex Mono', monospace;
-      font-size: 8px;
-      color: var(--warm-grey);
-      text-transform: uppercase;
-      writing-mode: vertical-lr;
-      transform: rotate(180deg);
-    }
-
+    /* Keep existing .btn for spawn panel */
     .btn {
       display: flex;
       align-items: center;
@@ -394,50 +447,68 @@
       border: none;
       cursor: pointer;
       font-family: 'Nunito', sans-serif;
-      font-size: 11px;
-      font-weight: 600;
+      font-size: 11px; font-weight: 600;
       white-space: nowrap;
       transition: all 0.15s;
       user-select: none;
     }
-
     .btn:active { transform: scale(0.96); }
-
-    .btn-primary {
-      background: var(--amber);
-      color: var(--espresso);
-    }
-    .btn-primary:hover { background: var(--terracotta); }
-
-    .btn-secondary {
-      background: var(--walnut);
-      color: var(--cream);
-    }
+    .btn-secondary { background: var(--walnut); color: var(--cream); }
     .btn-secondary:hover { background: #7a5240; }
-
-    .btn-chaos {
-      background: var(--punch);
-      color: white;
-      animation: pulseBtn 2s infinite;
-    }
-    @keyframes pulseBtn {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(255, 107, 107, 0.4); }
-      50% { box-shadow: 0 0 0 6px rgba(255, 107, 107, 0); }
-    }
+    .btn-chaos { background: var(--punch); color: white; }
     .btn-chaos:hover { background: var(--coral-red); }
 
-    .btn-toggle {
-      background: var(--walnut);
+    /* ─── AGENT POPUP ─────────────────────────────────── */
+    #agent-popup {
+      display: none;
+      position: fixed;
+      background: var(--dark-roast);
+      border: 2px solid var(--amber);
+      border-radius: 8px;
+      padding: 10px 14px;
+      z-index: 500;
+      min-width: 160px;
+      max-width: 220px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+      pointer-events: auto;
+    }
+    #agent-popup.visible { display: block; }
+
+    #popup-name {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 9px;
+      color: var(--amber);
+      margin-bottom: 6px;
+    }
+
+    #popup-type {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px;
       color: var(--warm-grey);
-    }
-    .btn-toggle.active {
-      background: var(--sunflower);
-      color: var(--espresso);
+      margin-bottom: 3px;
     }
 
-    .btn-icon { font-size: 14px; }
+    #popup-state {
+      font-family: 'VT323', monospace;
+      font-size: 14px;
+      color: var(--cream);
+      margin-bottom: 8px;
+    }
 
-    /* TOAST NOTIFICATIONS */
+    #popup-close {
+      background: var(--walnut);
+      border: none;
+      color: var(--warm-grey);
+      border-radius: 4px;
+      padding: 3px 10px;
+      cursor: pointer;
+      font-family: 'Nunito', sans-serif;
+      font-size: 11px;
+      width: 100%;
+    }
+    #popup-close:hover { background: var(--espresso); color: var(--cream); }
+
+    /* ─── TOAST NOTIFICATIONS ─────────────────────────── */
     #toast-container {
       position: fixed;
       bottom: 72px;
@@ -457,11 +528,11 @@
       padding: 8px 16px;
       border-radius: 6px;
       font-family: 'Nunito', sans-serif;
-      font-size: 13px;
-      font-weight: 600;
+      font-size: 13px; font-weight: 600;
       text-align: center;
       animation: toastIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
       box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+      white-space: nowrap;
     }
 
     @keyframes toastIn {
@@ -469,15 +540,13 @@
       to { transform: scale(1) translateY(0); opacity: 1; }
     }
 
-    .toast.fadeOut {
-      animation: toastOut 0.3s ease-in forwards;
-    }
+    .toast.fadeOut { animation: toastOut 0.3s ease-in forwards; }
 
     @keyframes toastOut {
       to { transform: scale(0.8) translateY(10px); opacity: 0; }
     }
 
-    /* WEEKEND COUNTDOWN */
+    /* ─── WEEKEND COUNTDOWN ───────────────────────────── */
     #weekend-countdown {
       position: fixed;
       bottom: 72px;
@@ -492,130 +561,56 @@
       z-index: 999;
       display: none;
     }
-
     #weekend-countdown.visible { display: block; }
+    #weekend-countdown .countdown-label { font-size: 9px; color: var(--warm-grey); margin-bottom: 2px; }
+    #weekend-countdown .countdown-time { font-size: 16px; font-weight: 500; letter-spacing: 2px; }
 
-    #weekend-countdown .countdown-label {
-      font-size: 9px;
-      color: var(--warm-grey);
-      margin-bottom: 2px;
-    }
-
-    #weekend-countdown .countdown-time {
-      font-size: 16px;
-      font-weight: 500;
-      letter-spacing: 2px;
-    }
-
-    /* CHAOS OVERLAY */
+    /* ─── OVERLAYS ────────────────────────────────────── */
     #chaos-overlay {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
       background: rgba(255, 0, 0, 0);
       pointer-events: none;
       z-index: 500;
       transition: background 0.3s;
     }
 
-    /* PALETTE SHIFT OVERLAY (Observer) */
     #sepia-overlay {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
       background: rgba(212, 178, 140, 0);
       pointer-events: none;
       z-index: 499;
       mix-blend-mode: multiply;
       transition: background 2s;
     }
+    #sepia-overlay.active { background: rgba(212, 178, 140, 0.25); }
 
-    #sepia-overlay.active {
-      background: rgba(212, 178, 140, 0.25);
-    }
-
-    /* MOBILE LAYOUT */
-    @media (max-width: 768px) {
-      #stats-panel {
-        display: none;
-      }
-
-      #event-log {
-        display: none;
-      }
-
-      #top-bar .title {
-        font-size: 8px;
-      }
-
-      #action-bar {
-        height: auto;
-        min-height: 56px;
-        padding: 6px;
-        flex-wrap: wrap;
-      }
-
-      .action-label { display: none; }
-      .action-divider { display: none; }
-
-      .btn {
-        padding: 8px;
-        font-size: 0;
-      }
-
-      .btn-icon {
-        font-size: 20px;
-      }
-
-      #mobile-stats {
-        display: flex;
-      }
-    }
-
-    @media (min-width: 769px) {
-      #mobile-stats { display: none !important; }
-    }
-
-    #mobile-stats {
-      display: none;
-      align-items: center;
-      gap: 12px;
-      padding: 6px 12px;
-      background: var(--dark-roast);
-      border-top: 1px solid var(--walnut);
-      overflow-x: auto;
+    /* ─── PERFORMANCE INDICATOR ───────────────────────── */
+    #perf-display {
+      position: fixed;
+      top: 48px;
+      right: 250px;
       font-family: 'IBM Plex Mono', monospace;
-      font-size: 10px;
-      color: var(--warm-grey);
+      font-size: 9px;
+      color: rgba(190, 176, 160, 0.5);
+      pointer-events: none;
+      z-index: 50;
     }
 
-    .mobile-stat {
-      display: flex;
-      gap: 4px;
-      white-space: nowrap;
-    }
-
-    .mobile-stat-value {
-      color: var(--cream);
-      font-weight: 500;
-    }
-
-    /* HELP MODAL */
+    /* ─── HELP MODAL ──────────────────────────────────── */
     #help-modal {
       display: none;
       position: fixed;
       top: 0; left: 0;
       width: 100%; height: 100%;
-      background: rgba(0,0,0,0.7);
+      background: rgba(0,0,0,0.75);
       z-index: 2000;
       align-items: center;
       justify-content: center;
     }
-
     #help-modal.open { display: flex; }
 
     .modal-content {
@@ -625,34 +620,32 @@
       padding: 24px;
       max-width: 500px;
       width: 90%;
-      max-height: 80vh;
+      max-height: 85vh;
       overflow-y: auto;
     }
 
     .modal-title {
       font-family: 'Press Start 2P', monospace;
-      font-size: 12px;
+      font-size: 11px;
       color: var(--amber);
       margin-bottom: 16px;
     }
 
-    .modal-section {
-      margin-bottom: 16px;
-    }
+    .modal-section { margin-bottom: 14px; }
 
     .modal-section h3 {
       font-family: 'IBM Plex Mono', monospace;
-      font-size: 11px;
+      font-size: 10px;
       color: var(--seafoam);
       text-transform: uppercase;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
 
     .modal-section p, .modal-section li {
       font-size: 12px;
       color: var(--warm-grey);
       line-height: 1.6;
-      margin-bottom: 4px;
+      margin-bottom: 3px;
     }
 
     .modal-section ul { padding-left: 16px; }
@@ -671,25 +664,42 @@
       font-size: 13px;
     }
 
-    /* PERFORMANCE INDICATOR */
-    #perf-display {
-      position: fixed;
-      top: 56px;
-      right: 258px;
-      font-family: 'IBM Plex Mono', monospace;
-      font-size: 9px;
-      color: rgba(190, 176, 160, 0.5);
-      pointer-events: none;
-      z-index: 50;
-    }
-
+    /* ─── MOBILE OVERRIDES ────────────────────────────── */
     @media (max-width: 768px) {
+      #stats-panel { display: none; }
+      #event-log { display: none; }
       #perf-display { right: 4px; }
+
+      #top-bar { height: 38px; min-height: 38px; }
+      #top-bar .title { font-size: 7px; }
+      #top-bar .chaos-label { display: none; }
+
+      #main-content { flex: 0 0 auto; height: 55vh; }
+
+      #mobile-chat {
+        display: flex;
+        height: 22vh;
+        flex: 0 0 22vh;
+      }
+
+      #action-bar {
+        height: 56px; min-height: 56px;
+        padding: 0 8px;
+        gap: 6px;
+      }
+
+      .icon-btn { width: 42px; height: 42px; font-size: 18px; }
+      .icon-btn::after { display: none; } /* hide tooltips on mobile */
+      .action-divider { display: none; }
+
+      #toast-container { bottom: 64px; }
+      #weekend-countdown { bottom: 64px; right: 4px; font-size: 10px; }
     }
   </style>
 </head>
 <body>
   <div id="app">
+
     <!-- TOP BAR -->
     <header id="top-bar">
       <div class="title">🏢 CHAOS OFFICE</div>
@@ -709,6 +719,7 @@
 
     <!-- MAIN CONTENT -->
     <div id="main-content">
+
       <!-- STATS PANEL -->
       <aside id="stats-panel" aria-label="Statistics">
         <div class="panel-section">
@@ -732,7 +743,7 @@
             <div class="stat-bar morale" id="bar-morale" style="width:65%"></div>
           </div>
           <div class="stat-row">
-            <span class="stat-label">Chaos Index</span>
+            <span class="stat-label">Chaos</span>
             <span class="stat-value" id="stat-chaos">0.24</span>
           </div>
           <div class="stat-bar-container">
@@ -782,12 +793,12 @@
         <div class="panel-section">
           <div class="panel-section-title">Spawn Agent</div>
           <div style="display:flex;flex-direction:column;gap:4px">
-            <button class="btn btn-secondary" data-spawn="GRINDER" aria-label="Spawn Grinder" style="font-size:10px;padding:5px 8px">+ Grinder</button>
-            <button class="btn btn-secondary" data-spawn="WANDERER" aria-label="Spawn Wanderer" style="font-size:10px;padding:5px 8px">+ Wanderer</button>
-            <button class="btn btn-secondary" data-spawn="GOSSIP" aria-label="Spawn Gossip" style="font-size:10px;padding:5px 8px">+ Gossip</button>
-            <button class="btn btn-secondary" data-spawn="MANAGER" aria-label="Spawn Manager" style="font-size:10px;padding:5px 8px">+ Manager</button>
-            <button class="btn btn-secondary" data-spawn="INTERN" aria-label="Spawn Intern" style="font-size:10px;padding:5px 8px">+ Intern</button>
-            <button class="btn btn-chaos" data-spawn="CHAOS_AGENT" aria-label="Spawn Chaos Agent" style="font-size:10px;padding:5px 8px">+ Chaos Agent</button>
+            <button class="btn btn-secondary" data-spawn="GRINDER" style="font-size:10px;padding:5px 8px">+ Grinder</button>
+            <button class="btn btn-secondary" data-spawn="WANDERER" style="font-size:10px;padding:5px 8px">+ Wanderer</button>
+            <button class="btn btn-secondary" data-spawn="GOSSIP" style="font-size:10px;padding:5px 8px">+ Gossip</button>
+            <button class="btn btn-secondary" data-spawn="MANAGER" style="font-size:10px;padding:5px 8px">+ Manager</button>
+            <button class="btn btn-secondary" data-spawn="INTERN" style="font-size:10px;padding:5px 8px">+ Intern</button>
+            <button class="btn btn-chaos" data-spawn="CHAOS_AGENT" style="font-size:10px;padding:5px 8px">+ Chaos Agent</button>
           </div>
         </div>
       </aside>
@@ -799,49 +810,36 @@
         </div>
       </div>
 
-      <!-- EVENT LOG -->
-      <aside id="event-log" aria-label="Event Log">
-        <div id="event-log-header">📋 Event Log</div>
-        <div id="event-log-entries" aria-live="polite" aria-atomic="false"></div>
+      <!-- CHAT FEED (desktop right panel) -->
+      <aside id="event-log" aria-label="Chat Feed">
+        <div id="event-log-header">💬 Chat Feed</div>
+        <div id="chat-feed" aria-live="polite" aria-atomic="false"></div>
       </aside>
     </div>
 
-    <!-- MOBILE STATS STRIP -->
-    <div id="mobile-stats">
-      <div class="mobile-stat">
-        <span>Staff:</span><span class="mobile-stat-value" id="m-stat-agents">40</span>
-      </div>
-      <div class="mobile-stat">
-        <span>Prod:</span><span class="mobile-stat-value" id="m-stat-productivity">72%</span>
-      </div>
-      <div class="mobile-stat">
-        <span>Chaos:</span><span class="mobile-stat-value" id="m-stat-chaos">24%</span>
-      </div>
+    <!-- MOBILE CHAT STRIP -->
+    <div id="mobile-chat" aria-label="Mobile Chat">
+      <div class="mobile-chat-header">💬 Chat</div>
+      <div id="mobile-chat-feed" aria-live="polite"></div>
     </div>
 
     <!-- ACTION BAR -->
     <footer id="action-bar">
-      <span class="action-label">Disturbances</span>
-      <div class="action-group">
-        <button class="btn btn-primary" id="btn-pizza" aria-label="Drop Pizza">
-          <span class="btn-icon">🍕</span><span>Pizza</span>
-        </button>
-        <button class="btn btn-chaos" id="btn-alarm" aria-label="Fire Alarm">
-          <span class="btn-icon">🔥</span><span>Fire Alarm</span>
-        </button>
-        <button class="btn btn-secondary" id="btn-cat" aria-label="Drop Cat">
-          <span class="btn-icon">🐱</span><span>Drop Cat</span>
-        </button>
-        <button class="btn btn-secondary" id="btn-meeting" aria-label="Place Meeting Room">
-          <span class="btn-icon">📊</span><span>Meeting</span>
-        </button>
-      </div>
+      <!-- Original disturbances -->
+      <button class="icon-btn" id="btn-pizza" title="Drop Pizza">🍕</button>
+      <button class="icon-btn icon-btn--chaos" id="btn-alarm" title="Fire Alarm">🔥</button>
+      <button class="icon-btn" id="btn-cat" title="Drop Cat">🐱</button>
+      <button class="icon-btn icon-btn--warning" id="btn-meeting" title="Place Meeting">📊</button>
+      <button class="icon-btn icon-btn--toggle" id="btn-friday" title="Friday Mode">🎉</button>
       <div class="action-divider"></div>
-      <div class="action-group">
-        <button class="btn btn-toggle" id="btn-friday" aria-label="Toggle Friday Afternoon">
-          <span class="btn-icon">🎉</span><span>Friday</span>
-        </button>
-      </div>
+      <!-- New disturbances -->
+      <button class="icon-btn icon-btn--warning" id="btn-coffee-spill" title="Coffee Spill">☕</button>
+      <button class="icon-btn icon-btn--chaos" id="btn-monday-mode" title="Monday Mode">💀</button>
+      <button class="icon-btn" id="btn-reply-all" title="Reply All">📧</button>
+      <button class="icon-btn icon-btn--good" id="btn-power-nap" title="Power Nap">💤</button>
+      <button class="icon-btn" id="btn-loud-music" title="Loud Music">🎵</button>
+      <button class="icon-btn icon-btn--good" id="btn-new-hire" title="New Hire">📦</button>
+      <button class="icon-btn" id="btn-ping-pong" title="Ping Pong">🏓</button>
     </footer>
   </div>
 
@@ -859,7 +857,15 @@
   </div>
 
   <!-- PERFORMANCE DISPLAY -->
-  <div id="perf-display" id="fps-display">60 FPS</div>
+  <div id="perf-display">60 FPS</div>
+
+  <!-- AGENT POPUP -->
+  <div id="agent-popup" role="dialog" aria-label="Agent Info">
+    <div id="popup-name">Dave</div>
+    <div id="popup-type">🔵 GRINDER</div>
+    <div id="popup-state">SEATED at desk</div>
+    <button id="popup-close">✕ Close</button>
+  </div>
 
   <!-- HELP MODAL -->
   <div id="help-modal" role="dialog" aria-modal="true" aria-label="Help">
@@ -889,6 +895,13 @@
           <li>🐱 <strong>Cat</strong> — half cluster, half flee</li>
           <li>📊 <strong>Meeting</strong> — Manager herds everyone in</li>
           <li>🎉 <strong>Friday</strong> — everything slows, Wanderers multiply</li>
+          <li>☕ <strong>Coffee Spill</strong> — breaks the coffee machine temporarily</li>
+          <li>💀 <strong>Monday Mode</strong> — everyone moves like it's 8am Monday</li>
+          <li>📧 <strong>Reply All</strong> — everyone stops to read their phone</li>
+          <li>💤 <strong>Power Nap</strong> — a lucky agent falls asleep at their desk</li>
+          <li>🎵 <strong>Loud Music</strong> — agents flee the noise source</li>
+          <li>📦 <strong>New Hire</strong> — fresh intern joins the chaos</li>
+          <li>🏓 <strong>Ping Pong</strong> — break room opens; wanderers flock</li>
         </ul>
       </div>
       <div class="modal-section">
