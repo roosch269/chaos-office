@@ -22,6 +22,14 @@ export class ChatSystem {
   }
 
   addMessage(agentName: string, agentType: AgentType | 'SYSTEM', text: string): void {
+    // Deduplication: skip if any of the last 3 messages have the same text
+    const last3 = this.messages.slice(0, 3);
+    if (last3.some(m => m.text === text)) return;
+
+    // Also skip if the last message from this same agent has the same text
+    const lastFromAgent = this.messages.find(m => m.agentName === agentName);
+    if (lastFromAgent && lastFromAgent.text === text) return;
+
     const msg: ChatMessage = {
       id: _chatIdCounter++,
       agentName,
@@ -53,13 +61,25 @@ export class ChatSystem {
     const agent = active[Math.floor(Math.random() * active.length)];
     const lines = IDLE_CHATS[agent.type] ?? ['...'];
     const text = lines[Math.floor(Math.random() * lines.length)];
-    this.addMessage(agent.name, agent.type, text);
+    // Mood emoji suffix on name
+    const moodEmoji = agent.mood >= 0.7 ? ' 😊' : agent.mood <= 0.3 ? ' 😞' : '';
+    this.addMessage(agent.name + moodEmoji, agent.type, text);
   }
 
   // Event-triggered messages
   onPizza(droppedBy?: string): void {
     this.addSystemMessage(`🍕 PIZZA ALERT! ${droppedBy ? droppedBy + ' left' : 'There\'s'} pizza in the office!`);
-    this.addMessage('Everyone', 'SYSTEM' as AgentType, 'PIZZA!!!');
+    const pizzaReactions = [
+      'PIZZA!!!',
+      'Drop everything. RIGHT NOW.',
+      'I was literally just hungry 🍕',
+      'Who ordered Hawaiian? (Not judging)',
+      '*sprints across office*',
+      'I skipped lunch for this moment',
+      'Every man for himself!!!',
+      'Is there garlic bread too?!',
+    ];
+    this.addMessage('Everyone', 'SYSTEM' as AgentType, pizzaReactions[Math.floor(Math.random() * pizzaReactions.length)]);
   }
 
   onFireAlarm(): void {
@@ -103,6 +123,13 @@ export class ChatSystem {
       'So apparently, management said...',
       'Don\'t tell anyone but...',
       'I heard we\'re getting restructured!',
+      'You didn\'t hear this from me, but...',
+      'The drama in HR right now is UNREAL',
+      'Someone got caught napping at their desk',
+      'Apparently the budget meeting went very badly',
+      'Three people quit on the same day last week',
+      'I\'m just saying what everyone\'s already thinking',
+      'You\'ll never guess who sent that reply-all',
     ];
     const text = gossipLines[Math.floor(Math.random() * gossipLines.length)];
     this.addMessage(agentName, AgentType.GOSSIP, text);
@@ -114,6 +141,11 @@ export class ChatSystem {
       'This isn\'t a social club!',
       'Break it up, break it up.',
       'We need to synergize separately.',
+      'I\'m going to need you all at your desks. Now.',
+      'What exactly is happening here?',
+      'This is not a sanctioned huddle!',
+      'My door is always open. Your desks should be occupied.',
+      'Let\'s take this energy and apply it... elsewhere.',
     ];
     this.addMessage(agentName, AgentType.MANAGER, lines[Math.floor(Math.random() * lines.length)]);
   }
@@ -124,6 +156,11 @@ export class ChatSystem {
       'Finally! Coffee.',
       'This is my fifth cup today.',
       'Black coffee, no sugar, no happiness.',
+      'Sweet, sweet caffeine ☕',
+      '*holds mug with both hands* ...Yes.',
+      'This machine and I have a special relationship.',
+      'Third cup. Don\'t judge me.',
+      'Productivity: restored. For now.',
     ];
     this.addMessage(agentName, AgentType.WANDERER, lines[Math.floor(Math.random() * lines.length)]);
   }

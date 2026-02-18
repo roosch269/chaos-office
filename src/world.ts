@@ -513,6 +513,7 @@ export class World {
       agent.state = AgentState.PANICKING;
       agent.panicTargetX = nearestExit.x;
       agent.panicTargetY = nearestExit.y;
+      agent.mood = Math.max(0, agent.mood - 0.15); // fire alarm = scary
       this.particles.spawnFireSparks(agent.x, agent.y);
     }
   }
@@ -575,6 +576,8 @@ export class World {
     this.fridayMode = enabled;
     if (enabled) {
       this.globalSpeedMult *= FRIDAY_SPEED_MULT;
+      // Friday = everyone gets a mood boost
+      for (const a of this.agents) a.mood = Math.min(1, a.mood + 0.1);
       const currentWanderers = this.agents.filter(a => a.type === AgentType.WANDERER).length;
       const toSpawn = currentWanderers * 2;
       for (let i = 0; i < toSpawn; i++) {

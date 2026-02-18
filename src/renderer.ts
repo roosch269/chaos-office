@@ -637,11 +637,21 @@ export class Renderer {
         if (agent.state === AgentState.SEATED) {
           // Tiny laptop on the desk below
           deco.rect(-6, bodyH - 3, 12, 7).fill({ color: 0x808FAA });
-          deco.rect(-5, bodyH - 2, 10, 5).fill({ color: 0xAAC8E0 });
+          // Screen pulse: glow brightness cycles with animPhase
+          const screenGlow = 0.55 + Math.sin(agent.animPhase * 1.5) * 0.25;
+          deco.rect(-5, bodyH - 2, 10, 5).fill({ color: 0xAAC8E0, alpha: screenGlow });
           // Screen glow lines
           deco.moveTo(-4, bodyH).lineTo(4, bodyH);
           deco.moveTo(-4, bodyH + 2).lineTo(3, bodyH + 2);
           deco.stroke({ width: 0.5, color: 0x66AACC, alpha: 0.8 });
+
+          // Typing dots above the laptop — 3-dot animation cycling every ~1s
+          const dotPhase = Math.floor(agent.animPhase / 1.0) % 4; // 0,1,2,3
+          const dotY = bodyH - 7;
+          for (let d = 0; d < 3; d++) {
+            const dotAlpha = d < dotPhase ? 0.9 : 0.2;
+            deco.circle(-4 + d * 4, dotY, 1.5).fill({ color: 0xAADDFF, alpha: dotAlpha });
+          }
         }
         break;
       }

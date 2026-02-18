@@ -101,6 +101,10 @@ export class Agent {
   // Speed multiplier (from aura/friday etc)
   speedMult: number;
 
+  // Personality evolution
+  mood: number;        // 0-1, starts at 0.5; affects speed & chat emoji
+  socialEnergy: number; // 0-1, starts at 0.5; increases in huddles
+
   constructor(type: AgentType, x: number, y: number) {
     this.id = _nextId++;
     this.type = type;
@@ -150,6 +154,8 @@ export class Agent {
     this.gridTargetY = 0;
     this.gridOverrideDuration = 0;
     this.speedMult = 1;
+    this.mood = 0.5;
+    this.socialEnergy = 0.5;
 
     this.initForType();
   }
@@ -317,6 +323,10 @@ export interface ParticleOpts {
 export function updateAgent(agent: Agent, dt: number, world: WorldContext): void {
   const cappedDt = Math.min(dt, TICK_DT_CAP);
 
+  // Personality: slow mood drift back toward baseline (0.5) and social energy decay
+  agent.mood += (0.5 - agent.mood) * 0.002 * cappedDt;
+  agent.socialEnergy = Math.max(0, agent.socialEnergy - 0.004 * cappedDt);
+
   // Animate bob/phase
   agent.bobPhase += agent.bobSpeed * cappedDt;
   agent.animPhase += cappedDt * 3;
@@ -406,6 +416,7 @@ export function updateAgent(agent: Agent, dt: number, world: WorldContext): void
     if (agent.eatTimer <= 0) {
       agent.state = AgentState.POST_PIZZA;
       agent.stateTimer = 3;
+      agent.mood = Math.min(1, agent.mood + 0.1); // pizza = happiness
     }
     return;
   }
@@ -424,6 +435,7 @@ export function updateAgent(agent: Agent, dt: number, world: WorldContext): void
   if (agent.state === AgentState.IN_MEETING) {
     agent.vx = 0; agent.vy = 0;
     agent.stateTimer -= cappedDt;
+    agent.mood = Math.max(0, agent.mood - 0.05 * cappedDt); // meetings drain morale
     // Gossip bonus handled by world
     return;
   }
@@ -466,7 +478,8 @@ function defaultStateForType(type: AgentType): AgentState {
 // GRINDER BEHAVIOR
 // ============================================================
 function updateGrinder(agent: Agent, dt: number, world: WorldContext): void {
-  const speed = BASE_SPEED * 1.1 * world.globalSpeedMult * agent.speedMult;
+  const moodMult = 0.9 + agent.mood * 0.2; // 0.9 (sad) → 1.1 (happy)
+  const speed = BASE_SPEED * 1.1 * world.globalSpeedMult * agent.speedMult * moodMult;
 
   switch (agent.state) {
     case AgentState.SEEKING_DESK: {
@@ -531,7 +544,8 @@ function updateGrinder(agent: Agent, dt: number, world: WorldContext): void {
 // WANDERER BEHAVIOR
 // ============================================================
 function updateWanderer(agent: Agent, dt: number, world: WorldContext): void {
-  const speed = BASE_SPEED * 0.8 * world.globalSpeedMult * agent.speedMult;
+  const moodMult = 0.9 + agent.mood * 0.2;
+  const speed = BASE_SPEED * 0.8 * world.globalSpeedMult * agent.speedMult * moodMult;
 
   switch (agent.state) {
     case AgentState.WANDERING: {
@@ -568,11 +582,13 @@ function updateWanderer(agent: Agent, dt: number, world: WorldContext): void {
           // Machine broken - wander away disappointed
           agent.heading = Math.atan2(agent.y - cmY, agent.x - cmX);
           agent.state = AgentState.WANDERING;
+          agent.mood = Math.max(0, agent.mood - 0.05); // disappointed
         } else {
           agent.state = AgentState.AT_COFFEE;
           agent.coffeeTimer = randRange(COFFEE_DWELL_MIN, COFFEE_DWELL_MAX);
           agent.vx = 0; agent.vy = 0;
           agent.flashTimer = 0.5; // brief happy flash
+          agent.mood = Math.min(1, agent.mood + 0.05); // coffee = small joy
         }
       }
       break;
@@ -602,7 +618,8 @@ function updateWanderer(agent: Agent, dt: number, world: WorldContext): void {
 // GOSSIP BEHAVIOR
 // ============================================================
 function updateGossip(agent: Agent, dt: number, world: WorldContext): void {
-  const speed = BASE_SPEED * GOSSIP_MOVE_SPEED_MULT * world.globalSpeedMult * agent.speedMult;
+  const moodMult = 0.9 + agent.mood * 0.2;
+  const speed = BASE_SPEED * GOSSIP_MOVE_SPEED_MULT * world.globalSpeedMult * agent.speedMult * moodMult;
   const seekRadius = world.fridayMode ? GOSSIP_SEEK_RADIUS * 1.5 : GOSSIP_SEEK_RADIUS;
 
   switch (agent.state) {
@@ -641,6 +658,8 @@ function updateGossip(agent: Agent, dt: number, world: WorldContext): void {
     case AgentState.IN_HUDDLE: {
       agent.vx = 0; agent.vy = 0;
       agent.stateTimer -= dt;
+      agent.mood = Math.min(1, agent.mood + 0.03 * dt); // gossip = mood boost
+      agent.socialEnergy = Math.min(1, agent.socialEnergy + 0.1 * dt);
 
       // Spread gossip color to neighbours
       const neighbours = world.quadtreeQuery(agent.x, agent.y, GOSSIP_SPREAD_RADIUS);
@@ -696,7 +715,8 @@ function updateGossip(agent: Agent, dt: number, world: WorldContext): void {
 // MANAGER BEHAVIOR
 // ============================================================
 function updateManager(agent: Agent, dt: number, world: WorldContext): void {
-  const speed = BASE_SPEED * 0.9 * world.globalSpeedMult * agent.speedMult;
+  const moodMult = 0.9 + agent.mood * 0.2;
+  const speed = BASE_SPEED * 0.9 * world.globalSpeedMult * agent.speedMult * moodMult;
 
   // Herding overrides
   if (agent.state === AgentState.HERDING && world.meetingRoom) {
@@ -924,6 +944,7 @@ function updateChaosAgent(agent: Agent, dt: number, world: WorldContext): void {
           grinder.state = AgentState.DISTURBED;
           grinder.stateTimer = 4;
           grinder.targetDeskId = null;
+          grinder.mood = Math.max(0, grinder.mood - 0.2); // desk destroyed = very unhappy
           world.releaseDesk(grinder.id);
         }
         world.spawnParticle(desk.x + desk.width / 2, desk.y + desk.height / 2, COLORS.PARTICLE_FIRE, 10);
