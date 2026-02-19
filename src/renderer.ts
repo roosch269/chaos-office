@@ -10,6 +10,7 @@ import { AgentType, AgentState } from './types.js';
 import { World } from './world.js';
 import {
   WORLD_WIDTH, WORLD_HEIGHT, COLORS, AGENT_RADIUS,
+  MOBILE_BREAKPOINT, DESKTOP_AGENT_SCALE, MOBILE_AGENT_SCALE,
 } from './constants.js';
 import { hslToHex } from './particles.js';
 
@@ -58,6 +59,9 @@ export class Renderer {
   // Time overlay
   private timeOverlay: Graphics;
 
+  // Mobile character scaling
+  private agentScale: number;
+
   // Label style (shared)
   private labelStyle: TextStyle;
   private agentNameStyle: TextStyle;
@@ -85,6 +89,8 @@ export class Renderer {
     this.scaleVal = 1;
     this.offsetX = 0;
     this.offsetY = 0;
+    const isMobile = window.innerWidth <= MOBILE_BREAKPOINT || navigator.maxTouchPoints > 1;
+    this.agentScale = isMobile ? MOBILE_AGENT_SCALE : DESKTOP_AGENT_SCALE;
 
     this.labelStyle = new TextStyle({
       fontFamily: 'Nunito, sans-serif',
@@ -547,6 +553,7 @@ export class Renderer {
 
     container.x = agent.x;
     container.y = agent.y;
+    container.scale.set(this.agentScale);
 
     // Observer: semi-transparent
     const baseAlpha = agent.type === AgentType.OBSERVER ? agent.alpha * 0.75 : agent.alpha;

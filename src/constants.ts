@@ -99,19 +99,23 @@ export const CHAOS_ORDER_HYSTERESIS = 0.05;
 export const CHAOS_METRIC_WINDOW = 10;
 
 // Mobile
-export const MOBILE_AGENT_COUNT = 20;
+export const MOBILE_AGENT_COUNT = 8;
 export const MOBILE_BREAKPOINT = 768;
+
+// Agent display radius (used by renderer for mobile scaling)
+export const DESKTOP_AGENT_SCALE = 1.0;
+export const MOBILE_AGENT_SCALE = 1.6;
 
 // Particle system
 export const MAX_PARTICLES = 500;
 
-// Desktop starting counts
-export const START_GRINDERS = 8;
-export const START_WANDERERS = 10;
-export const START_GOSSIPS = 8;
-export const START_MANAGERS = 2;
-export const START_INTERNS = 8;
-export const START_CHAOS = 4;
+// Desktop starting counts (small team ~13)
+export const START_GRINDERS = 3;
+export const START_WANDERERS = 3;
+export const START_GOSSIPS = 2;
+export const START_MANAGERS = 1;
+export const START_INTERNS = 2;
+export const START_CHAOS = 2;
 
 // Office layout
 export const DESK_COLS = 6;

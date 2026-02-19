@@ -8,7 +8,7 @@
 
 ## What is this?
 
-Chaos Office is a browser-based simulation of 200 office workers governed by simple per-agent behavioural rules. Watch clusters form, gossip spread, managers panic, and chaos agents break things — all emerging from a handful of basic if/then rules.
+Chaos Office is a browser-based simulation of office workers governed by simple per-agent behavioural rules. Watch clusters form, gossip spread, managers panic, and chaos agents break things — all emerging from a handful of basic if/then rules.
 
 No server required. No API keys. Pure client-side TypeScript.
 
@@ -110,11 +110,32 @@ The `vite.config.ts` sets `base: './'` for Vercel compatibility.
 
 ---
 
+## Small Team Defaults
+
+The simulation starts with a compact team so interactions are immediately visible:
+
+| Platform | Default Agents | Breakdown |
+|----------|---------------|-----------|
+| Desktop  | ~13           | 3 Grinders, 3 Wanderers, 2 Gossips, 1 Manager, 2 Interns, 2 Chaos |
+| Mobile   | ~8            | Proportionally scaled down from desktop |
+
+Use the spawn controls (disturbance buttons like **New Hire**, **Friday Mode**) to grow the team dynamically during play. The engine comfortably handles 200+ agents at 60 fps on desktop.
+
+On mobile, characters render at 1.6x scale for better readability on small screens.
+
+---
+
+## Asset Pipeline (Stability API)
+
+See [ASSET_PIPELINE.md](./ASSET_PIPELINE.md) for the plan to integrate AI-generated sprite assets using the Stability API, including prompt formats, a generation script, and the phased integration approach.
+
+---
+
 ## Performance
 
 | Target | Spec |
 |--------|------|
-| Agents | 200 at 60 fps (desktop) |
+| Agents | 200+ at 60 fps (desktop) |
 | Mobile agents | 80 at 60 fps |
 | Bundle (gzip) | ~162 KB (PixiJS 144 KB + app 18 KB) |
 | No server | Zero API calls, static files only |

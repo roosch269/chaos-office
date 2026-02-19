@@ -182,12 +182,11 @@ export class World {
   }
 
   private spawnInitialAgents(): void {
-    const total = this.isMobile ? MOBILE_AGENT_COUNT : (
-      START_GRINDERS + START_WANDERERS + START_GOSSIPS + START_MANAGERS + START_INTERNS + START_CHAOS
-    );
+    const desktopTotal = START_GRINDERS + START_WANDERERS + START_GOSSIPS + START_MANAGERS + START_INTERNS + START_CHAOS;
+    const total = this.isMobile ? MOBILE_AGENT_COUNT : desktopTotal;
 
     const mobile = this.isMobile;
-    const scale = mobile ? MOBILE_AGENT_COUNT / 40 : 1;
+    const scale = mobile ? MOBILE_AGENT_COUNT / desktopTotal : 1;
 
     const counts = {
       [AgentType.GRINDER]:     Math.round(START_GRINDERS * scale),
